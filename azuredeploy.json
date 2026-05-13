@@ -1,0 +1,2834 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "7422089716155879809"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Locatie voor alle resources"
+      }
+    },
+    "resourceToken": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 10,
+      "metadata": {
+        "description": "Unieke token voor resource namen (gebruik bijv. een korte hash)"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "project": "defender-dashboard",
+        "managedBy": "bicep"
+      },
+      "metadata": {
+        "description": "Tags voor alle resources"
+      }
+    },
+    "managementGroupObjectId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Object ID van sg-defender-dashboard-management"
+      }
+    },
+    "werkplekGroupObjectId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Object ID van sg-defender-dashboard-werkplek"
+      }
+    },
+    "securityGroupObjectId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Object ID van sg-defender-dashboard-security"
+      }
+    },
+    "scriptRunnerIdentityId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Resource ID van de UAMI die app role assignments mag uitvoeren (bootstrap UAMI)"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-identity",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceToken": {
+            "value": "[parameters('resourceToken')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "7458376572508033385"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor alle resources"
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Unieke token voor resource namen"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor alle resources"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2023-01-31",
+              "name": "[format('uai-defender-dashboard-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            }
+          ],
+          "outputs": {
+            "identityId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de Managed Identity"
+              },
+              "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uai-defender-dashboard-{0}', parameters('resourceToken')))]"
+            },
+            "principalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID (Object ID) van de Managed Identity"
+              },
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uai-defender-dashboard-{0}', parameters('resourceToken'))), '2023-01-31').principalId]"
+            },
+            "clientId": {
+              "type": "string",
+              "metadata": {
+                "description": "Client ID van de Managed Identity"
+              },
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uai-defender-dashboard-{0}', parameters('resourceToken'))), '2023-01-31').clientId]"
+            },
+            "identityName": {
+              "type": "string",
+              "metadata": {
+                "description": "Naam van de Managed Identity"
+              },
+              "value": "[format('uai-defender-dashboard-{0}', parameters('resourceToken'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-workspace",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "workspaceName": {
+            "value": "[format('law-defender-dashboard-{0}', parameters('resourceToken'))]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "17278638039065244804"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor alle resources"
+              }
+            },
+            "workspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Naam van de workspace"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor alle resources"
+              }
+            },
+            "dailyQuotaGb": {
+              "type": "int",
+              "defaultValue": 10,
+              "metadata": {
+                "description": "Dagelijks ingestie quotum in GB (bescherming tegen kosten-explosie)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('workspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": 90,
+                "workspaceCapping": {
+                  "dailyQuotaGb": "[parameters('dailyQuotaGb')]"
+                },
+                "features": {
+                  "disableLocalAuth": true,
+                  "enableLogAccessUsingOnlyResourcePermissions": false,
+                  "enableDataExport": false,
+                  "immediatePurgeDataOn30Days": false
+                },
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/locks",
+              "apiVersion": "2020-05-01",
+              "scope": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]",
+              "name": "[format('lock-{0}', parameters('workspaceName'))]",
+              "properties": {
+                "level": "CanNotDelete",
+                "notes": "Log Analytics workspace mag niet verwijderd worden zonder expliciete goedkeuring."
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderExposureScore_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 730,
+                "totalRetentionInDays": 2556,
+                "schema": {
+                  "name": "DefenderExposureScore_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "ExposureScore",
+                      "type": "real"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSecureScore_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 730,
+                "totalRetentionInDays": 2556,
+                "schema": {
+                  "name": "DefenderSecureScore_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "CurrentScore",
+                      "type": "real"
+                    },
+                    {
+                      "name": "MaxScore",
+                      "type": "real"
+                    },
+                    {
+                      "name": "AverageComparativeScore",
+                      "type": "real"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderConfigurationScore_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 730,
+                "totalRetentionInDays": 2556,
+                "schema": {
+                  "name": "DefenderConfigurationScore_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "ConfigurationScore",
+                      "type": "real"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAlertAggregates_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 1826,
+                "schema": {
+                  "name": "DefenderAlertAggregates_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "TotalAlerts",
+                      "type": "int"
+                    },
+                    {
+                      "name": "HighSeverity",
+                      "type": "int"
+                    },
+                    {
+                      "name": "MediumSeverity",
+                      "type": "int"
+                    },
+                    {
+                      "name": "LowSeverity",
+                      "type": "int"
+                    },
+                    {
+                      "name": "MTTR_Hours",
+                      "type": "real"
+                    },
+                    {
+                      "name": "MTTD_Hours",
+                      "type": "real"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderRecommendations_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 1826,
+                "schema": {
+                  "name": "DefenderRecommendations_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "RecommendationId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "RecommendationName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "RecommendationCategory",
+                      "type": "string"
+                    },
+                    {
+                      "name": "Severity",
+                      "type": "string"
+                    },
+                    {
+                      "name": "Status",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ExposedMachines",
+                      "type": "int"
+                    },
+                    {
+                      "name": "RemediationType",
+                      "type": "string"
+                    },
+                    {
+                      "name": "Vendor",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ProductName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SubCategory",
+                      "type": "string"
+                    },
+                    {
+                      "name": "RelatedSoftwareId",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderDeviceInventory_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderDeviceInventory_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AadDeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DeviceName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "OsPlatform",
+                      "type": "string"
+                    },
+                    {
+                      "name": "OsVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "RiskScore",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ExposureLevel",
+                      "type": "string"
+                    },
+                    {
+                      "name": "HealthStatus",
+                      "type": "string"
+                    },
+                    {
+                      "name": "OnboardingStatus",
+                      "type": "string"
+                    },
+                    {
+                      "name": "LastSeen",
+                      "type": "datetime"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSoftwareInventory_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderSoftwareInventory_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "SoftwareId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVendor",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "NumberOfWeaknesses",
+                      "type": "int"
+                    },
+                    {
+                      "name": "NumberOfDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "EndOfSupportStatus",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAVHealth_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 365,
+                "schema": {
+                  "name": "DefenderAVHealth_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AadDeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DeviceName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AVEngineVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AVSignatureVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AVPlatformVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AVMode",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AVSignatureUpdateTime",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "QuickScanResult",
+                      "type": "string"
+                    },
+                    {
+                      "name": "QuickScanTime",
+                      "type": "datetime"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSecureConfig_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderSecureConfig_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AadDeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DeviceName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ConfigurationId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ConfigurationCategory",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ConfigurationSubcategory",
+                      "type": "string"
+                    },
+                    {
+                      "name": "IsCompliant",
+                      "type": "boolean"
+                    },
+                    {
+                      "name": "IsApplicable",
+                      "type": "boolean"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderVulnDelta_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderVulnDelta_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AadDeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "CveId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "EventType",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVendor",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "VulnerabilitySeverityLevel",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderDeviceSoftware_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderDeviceSoftware_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AadDeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DeviceName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVendor",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVersion",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'IntuneDevices_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "IntuneDevices_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AadDeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DeviceName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "OperatingSystem",
+                      "type": "string"
+                    },
+                    {
+                      "name": "OsVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ComplianceState",
+                      "type": "string"
+                    },
+                    {
+                      "name": "EnrollmentType",
+                      "type": "string"
+                    },
+                    {
+                      "name": "LastSyncDateTime",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "ManagementAgent",
+                      "type": "string"
+                    },
+                    {
+                      "name": "UserPrincipalName",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'IntuneDetectedApps_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 365,
+                "schema": {
+                  "name": "IntuneDetectedApps_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "ApplicationName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ApplicationVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DeviceCount",
+                      "type": "int"
+                    },
+                    {
+                      "name": "Platform",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'IntuneComplianceReports_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "IntuneComplianceReports_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "PolicyName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "PolicyId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "CompliantDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "NonCompliantDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "ErrorDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "NotApplicableDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "Platform",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de workspace"
+              },
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+            },
+            "workspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Naam van de workspace"
+              },
+              "value": "[parameters('workspaceName')]"
+            },
+            "workspaceCustomerId": {
+              "type": "string",
+              "metadata": {
+                "description": "Workspace customer ID (voor queries)"
+              },
+              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName')), '2023-09-01').customerId]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-dcr",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceToken": {
+            "value": "[parameters('resourceToken')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-workspace'), '2025-04-01').outputs.workspaceId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "16540591932088581127"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor alle resources"
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Unieke token voor resource namen"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor alle resources"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de Log Analytics workspace"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/dataCollectionEndpoints",
+              "apiVersion": "2023-03-11",
+              "name": "[format('dce-defender-dashboard-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "networkAcls": {
+                  "publicNetworkAccess": "Enabled"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[format('dcr-defender-daily-scores-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "dataCollectionEndpointId": "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "streamDeclarations": {
+                  "Custom-DefenderExposureScore_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "ExposureScore",
+                        "type": "real"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderSecureScore_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "CurrentScore",
+                        "type": "real"
+                      },
+                      {
+                        "name": "MaxScore",
+                        "type": "real"
+                      },
+                      {
+                        "name": "AverageComparativeScore",
+                        "type": "real"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderConfigurationScore_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "ConfigurationScore",
+                        "type": "real"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderAlertAggregates_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "TotalAlerts",
+                        "type": "int"
+                      },
+                      {
+                        "name": "HighSeverity",
+                        "type": "int"
+                      },
+                      {
+                        "name": "MediumSeverity",
+                        "type": "int"
+                      },
+                      {
+                        "name": "LowSeverity",
+                        "type": "int"
+                      },
+                      {
+                        "name": "MTTR_Hours",
+                        "type": "real"
+                      },
+                      {
+                        "name": "MTTD_Hours",
+                        "type": "real"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderRecommendations_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "RecommendationId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "RecommendationName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "RecommendationCategory",
+                        "type": "string"
+                      },
+                      {
+                        "name": "Severity",
+                        "type": "string"
+                      },
+                      {
+                        "name": "Status",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ExposedMachines",
+                        "type": "int"
+                      },
+                      {
+                        "name": "RemediationType",
+                        "type": "string"
+                      },
+                      {
+                        "name": "Vendor",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ProductName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SubCategory",
+                        "type": "string"
+                      },
+                      {
+                        "name": "RelatedSoftwareId",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "workspaceResourceId": "[parameters('workspaceId')]",
+                      "name": "defender-dashboard-workspace"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "Custom-DefenderExposureScore_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderExposureScore_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderSecureScore_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderSecureScore_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderConfigurationScore_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderConfigurationScore_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderAlertAggregates_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderAlertAggregates_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderRecommendations_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderRecommendations_CL"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[format('dcr-defender-weekly-snapshots-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "dataCollectionEndpointId": "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "streamDeclarations": {
+                  "Custom-DefenderDeviceInventory_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "DeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AadDeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DeviceName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OsPlatform",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OsVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "RiskScore",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ExposureLevel",
+                        "type": "string"
+                      },
+                      {
+                        "name": "HealthStatus",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OnboardingStatus",
+                        "type": "string"
+                      },
+                      {
+                        "name": "LastSeen",
+                        "type": "datetime"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderSoftwareInventory_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "SoftwareId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareVendor",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "NumberOfWeaknesses",
+                        "type": "int"
+                      },
+                      {
+                        "name": "NumberOfDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "EndOfSupportStatus",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderAVHealth_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "DeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AadDeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DeviceName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AVEngineVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AVSignatureVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AVPlatformVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AVMode",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AVSignatureUpdateTime",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "QuickScanResult",
+                        "type": "string"
+                      },
+                      {
+                        "name": "QuickScanTime",
+                        "type": "datetime"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderSecureConfig_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "DeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AadDeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DeviceName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ConfigurationId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ConfigurationCategory",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ConfigurationSubcategory",
+                        "type": "string"
+                      },
+                      {
+                        "name": "IsCompliant",
+                        "type": "boolean"
+                      },
+                      {
+                        "name": "IsApplicable",
+                        "type": "boolean"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderVulnDelta_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "DeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AadDeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "CveId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "EventType",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareVendor",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "VulnerabilitySeverityLevel",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderDeviceSoftware_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "DeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AadDeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DeviceName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareVendor",
+                        "type": "string"
+                      },
+                      {
+                        "name": "SoftwareVersion",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "workspaceResourceId": "[parameters('workspaceId')]",
+                      "name": "defender-dashboard-workspace"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "Custom-DefenderDeviceInventory_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderDeviceInventory_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderSoftwareInventory_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderSoftwareInventory_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderAVHealth_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderAVHealth_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderSecureConfig_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderSecureConfig_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderVulnDelta_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderVulnDelta_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderDeviceSoftware_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderDeviceSoftware_CL"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[format('dcr-defender-intune-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "dataCollectionEndpointId": "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "streamDeclarations": {
+                  "Custom-IntuneDevices_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "DeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AadDeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DeviceName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OperatingSystem",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OsVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ComplianceState",
+                        "type": "string"
+                      },
+                      {
+                        "name": "EnrollmentType",
+                        "type": "string"
+                      },
+                      {
+                        "name": "LastSyncDateTime",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "ManagementAgent",
+                        "type": "string"
+                      },
+                      {
+                        "name": "UserPrincipalName",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "Custom-IntuneDetectedApps_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "ApplicationName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ApplicationVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DeviceCount",
+                        "type": "int"
+                      },
+                      {
+                        "name": "Platform",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "Custom-IntuneComplianceReports_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "PolicyName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "PolicyId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "CompliantDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "NonCompliantDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "ErrorDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "NotApplicableDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "Platform",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "workspaceResourceId": "[parameters('workspaceId')]",
+                      "name": "defender-dashboard-workspace"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "Custom-IntuneDevices_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-IntuneDevices_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-IntuneDetectedApps_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-IntuneDetectedApps_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-IntuneComplianceReports_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-IntuneComplianceReports_CL"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "dceEndpoint": {
+              "type": "string",
+              "metadata": {
+                "description": "Data Collection Endpoint URI"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken'))), '2023-03-11').logsIngestion.endpoint]"
+            },
+            "dceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Data Collection Endpoint ID"
+              },
+              "value": "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]"
+            },
+            "dcrDailyScoresImmutableId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Daily Scores — Immutable ID"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-daily-scores-{0}', parameters('resourceToken'))), '2023-03-11').immutableId]"
+            },
+            "dcrDailyScoresId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Daily Scores — Resource ID"
+              },
+              "value": "[resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-daily-scores-{0}', parameters('resourceToken')))]"
+            },
+            "dcrWeeklySnapshotsImmutableId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Weekly Snapshots — Immutable ID"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-weekly-snapshots-{0}', parameters('resourceToken'))), '2023-03-11').immutableId]"
+            },
+            "dcrWeeklySnapshotsId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Weekly Snapshots — Resource ID"
+              },
+              "value": "[resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-weekly-snapshots-{0}', parameters('resourceToken')))]"
+            },
+            "dcrIntuneImmutableId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Intune — Immutable ID"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-intune-{0}', parameters('resourceToken'))), '2023-03-11').immutableId]"
+            },
+            "dcrIntuneId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Intune — Resource ID"
+              },
+              "value": "[resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-intune-{0}', parameters('resourceToken')))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-workspace')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-monitoring",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceToken": {
+            "value": "[parameters('resourceToken')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-workspace'), '2025-04-01').outputs.workspaceId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "4790028674981991437"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor alle resources"
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Unieke token voor resource namen"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor alle resources"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de Log Analytics workspace"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[format('appi-defender-dashboard-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "web",
+              "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[parameters('workspaceId')]",
+                "DisableLocalAuth": true
+              }
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "[format('alert-defender-function-failures-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "Defender Dashboard — Function Failures",
+                "description": "Meer dan 3 function failures in de afgelopen 30 minuten",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT15M",
+                "windowSize": "PT30M",
+                "scopes": [
+                  "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "requests | where success == false | summarize FailedCount = count() by bin(timestamp, 15m)",
+                      "timeAggregation": "Count",
+                      "operator": "GreaterThan",
+                      "threshold": 3,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "[format('alert-defender-missing-daily-data-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "Defender Dashboard — Ontbrekende dagelijkse data",
+                "description": "Geen Exposure Score data ingekomen in de afgelopen 26 uur",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT1H",
+                "windowSize": "PT1H",
+                "scopes": [
+                  "[parameters('workspaceId')]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "DefenderExposureScore_CL | where TimeGenerated > ago(26h) | summarize RecordCount = count()",
+                      "timeAggregation": "Count",
+                      "operator": "LessThan",
+                      "threshold": 1,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "appInsightsConnectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights Connection String"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken'))), '2020-02-02').ConnectionString]"
+            },
+            "appInsightsInstrumentationKey": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights Instrumentation Key"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken'))), '2020-02-02').InstrumentationKey]"
+            },
+            "appInsightsName": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights naam"
+              },
+              "value": "[format('appi-defender-dashboard-{0}', parameters('resourceToken'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-workspace')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-app-config",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceToken": {
+            "value": "[parameters('resourceToken')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "identityPrincipalId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.principalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "15548462357221667583"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor alle resources"
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Unieke token voor resource namen"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor alle resources"
+              }
+            },
+            "identityPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID van de Managed Identity (voor RBAC)"
+              }
+            }
+          },
+          "variables": {
+            "appConfigDataReaderRoleId": "516239f1-63e1-4d78-a4de-a74fb236a071"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores",
+              "apiVersion": "2023-03-01",
+              "name": "[format('appcs-defender-dashboard-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "free"
+              },
+              "properties": {
+                "disableLocalAuth": true
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]",
+              "name": "[guid(resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken'))), parameters('identityPrincipalId'), variables('appConfigDataReaderRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('appConfigDataReaderRoleId'))]",
+                "principalId": "[parameters('identityPrincipalId')]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:daily:exposureScore')]",
+              "properties": {
+                "value": "{\"url\": \"https://api.securitycenter.microsoft.com/api/exposureScore\", \"method\": \"GET\", \"scope\": \"https://api.securitycenter.microsoft.com/.default\", \"stream\": \"Custom-DefenderExposureScore_CL\", \"dcr\": \"daily\", \"transform\": \"single\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:daily:configurationScore')]",
+              "properties": {
+                "value": "{\"url\": \"https://api.securitycenter.microsoft.com/api/configurationScore\", \"method\": \"GET\", \"scope\": \"https://api.securitycenter.microsoft.com/.default\", \"stream\": \"Custom-DefenderConfigurationScore_CL\", \"dcr\": \"daily\", \"transform\": \"single\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:daily:secureScore')]",
+              "properties": {
+                "value": "{\"url\": \"https://graph.microsoft.com/v1.0/security/secureScores?$top=1\", \"method\": \"GET\", \"scope\": \"https://graph.microsoft.com/.default\", \"stream\": \"Custom-DefenderSecureScore_CL\", \"dcr\": \"daily\", \"transform\": \"graphList\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:daily:recommendations')]",
+              "properties": {
+                "value": "{\"url\": \"https://api.securitycenter.microsoft.com/api/recommendations\", \"method\": \"GET\", \"scope\": \"https://api.securitycenter.microsoft.com/.default\", \"stream\": \"Custom-DefenderRecommendations_CL\", \"dcr\": \"daily\", \"transform\": \"list\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:daily:vulnDelta')]",
+              "properties": {
+                "value": "{\"url\": \"https://api.securitycenter.microsoft.com/api/machines/SoftwareVulnerabilityChangesByMachine\", \"method\": \"GET\", \"scope\": \"https://api.securitycenter.microsoft.com/.default\", \"stream\": \"Custom-DefenderVulnDelta_CL\", \"dcr\": \"daily\", \"transform\": \"list\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:weekly:deviceInventory')]",
+              "properties": {
+                "value": "{\"url\": \"https://api.securitycenter.microsoft.com/api/machines\", \"method\": \"GET\", \"scope\": \"https://api.securitycenter.microsoft.com/.default\", \"stream\": \"Custom-DefenderDeviceInventory_CL\", \"dcr\": \"weekly\", \"transform\": \"list\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:weekly:softwareInventory')]",
+              "properties": {
+                "value": "{\"url\": \"https://api.securitycenter.microsoft.com/api/Software\", \"method\": \"GET\", \"scope\": \"https://api.securitycenter.microsoft.com/.default\", \"stream\": \"Custom-DefenderSoftwareInventory_CL\", \"dcr\": \"weekly\", \"transform\": \"list\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:weekly:avHealth')]",
+              "properties": {
+                "value": "{\"url\": \"https://api.securitycenter.microsoft.com/api/deviceavstatus\", \"method\": \"GET\", \"scope\": \"https://api.securitycenter.microsoft.com/.default\", \"stream\": \"Custom-DefenderAVHealth_CL\", \"dcr\": \"weekly\", \"transform\": \"exportList\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:weekly:secureConfig')]",
+              "properties": {
+                "value": "{\"url\": \"https://api.securitycenter.microsoft.com/api/machines/SecureConfigurationsAssessmentByMachine\", \"method\": \"GET\", \"scope\": \"https://api.securitycenter.microsoft.com/.default\", \"stream\": \"Custom-DefenderSecureConfig_CL\", \"dcr\": \"weekly\", \"transform\": \"exportList\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:weekly:intuneDevices')]",
+              "properties": {
+                "value": "{\"url\": \"https://graph.microsoft.com/v1.0/deviceManagement/managedDevices\", \"method\": \"GET\", \"scope\": \"https://graph.microsoft.com/.default\", \"stream\": \"Custom-IntuneDevices_CL\", \"dcr\": \"intune\", \"transform\": \"graphList\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+              "apiVersion": "2023-03-01",
+              "name": "[format('{0}/{1}', format('appcs-defender-dashboard-{0}', parameters('resourceToken')), 'endpoints:weekly:intuneDetectedApps')]",
+              "properties": {
+                "value": "{\"url\": \"https://graph.microsoft.com/v1.0/deviceManagement/detectedApps\", \"method\": \"GET\", \"scope\": \"https://graph.microsoft.com/.default\", \"stream\": \"Custom-IntuneDetectedApps_CL\", \"dcr\": \"intune\", \"transform\": \"graphList\"}",
+                "contentType": "application/json"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "appConfigEndpoint": {
+              "type": "string",
+              "metadata": {
+                "description": "App Configuration Endpoint"
+              },
+              "value": "[reference(resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken'))), '2023-03-01').endpoint]"
+            },
+            "appConfigName": {
+              "type": "string",
+              "metadata": {
+                "description": "App Configuration naam"
+              },
+              "value": "[format('appcs-defender-dashboard-{0}', parameters('resourceToken'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-identity')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-function-app",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceToken": {
+            "value": "[parameters('resourceToken')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "identityId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.identityId.value]"
+          },
+          "identityClientId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.clientId.value]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-monitoring'), '2025-04-01').outputs.appInsightsConnectionString.value]"
+          },
+          "dceEndpoint": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dceEndpoint.value]"
+          },
+          "dcrDailyScoresImmutableId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dcrDailyScoresImmutableId.value]"
+          },
+          "dcrWeeklySnapshotsImmutableId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dcrWeeklySnapshotsImmutableId.value]"
+          },
+          "dcrIntuneImmutableId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dcrIntuneImmutableId.value]"
+          },
+          "appConfigEndpoint": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-app-config'), '2025-04-01').outputs.appConfigEndpoint.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "5109632250440246884"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor alle resources"
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Unieke token voor resource namen"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor alle resources"
+              }
+            },
+            "identityId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de User-Assigned Managed Identity"
+              }
+            },
+            "identityClientId": {
+              "type": "string",
+              "metadata": {
+                "description": "Client ID van de User-Assigned Managed Identity"
+              }
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights Connection String"
+              }
+            },
+            "dceEndpoint": {
+              "type": "string",
+              "metadata": {
+                "description": "DCE Endpoint URI"
+              }
+            },
+            "dcrDailyScoresImmutableId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Daily Scores Immutable ID"
+              }
+            },
+            "dcrWeeklySnapshotsImmutableId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Weekly Snapshots Immutable ID"
+              }
+            },
+            "dcrIntuneImmutableId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Intune Immutable ID"
+              }
+            },
+            "appConfigEndpoint": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "App Configuration Endpoint"
+              }
+            }
+          },
+          "variables": {
+            "storageBlobDataOwnerRoleId": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-05-01",
+              "name": "[format('stdefenderdash{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "StorageV2",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false
+              }
+            },
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2024-04-01",
+              "name": "[format('plan-defender-dashboard-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "tier": "FlexConsumption",
+                "name": "FC1"
+              },
+              "kind": "functionapp",
+              "properties": {
+                "reserved": true
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2024-04-01",
+              "name": "[format('func-defender-dashboard-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[union(parameters('tags'), createObject('azd-service-name', 'function-app'))]",
+              "kind": "functionapp,linux",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('identityId'))]": {}
+                }
+              },
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('plan-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "httpsOnly": true,
+                "functionAppConfig": {
+                  "deployment": {
+                    "storage": {
+                      "type": "blobContainer",
+                      "value": "[format('{0}deploymentpackage', reference(resourceId('Microsoft.Storage/storageAccounts', format('stdefenderdash{0}', parameters('resourceToken'))), '2023-05-01').primaryEndpoints.blob)]",
+                      "authentication": {
+                        "type": "UserAssignedIdentity",
+                        "userAssignedIdentityResourceId": "[parameters('identityId')]"
+                      }
+                    }
+                  },
+                  "scaleAndConcurrency": {
+                    "maximumInstanceCount": 2,
+                    "instanceMemoryMB": 512
+                  },
+                  "runtime": {
+                    "name": "python",
+                    "version": "3.11"
+                  }
+                },
+                "siteConfig": {
+                  "appSettings": [
+                    {
+                      "name": "AZURE_CLIENT_ID",
+                      "value": "[parameters('identityClientId')]"
+                    },
+                    {
+                      "name": "AzureWebJobsStorage__accountName",
+                      "value": "[format('stdefenderdash{0}', parameters('resourceToken'))]"
+                    },
+                    {
+                      "name": "AzureWebJobsStorage__credential",
+                      "value": "managedidentity"
+                    },
+                    {
+                      "name": "AzureWebJobsStorage__clientId",
+                      "value": "[parameters('identityClientId')]"
+                    },
+                    {
+                      "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                      "value": "[parameters('appInsightsConnectionString')]"
+                    },
+                    {
+                      "name": "DCE_ENDPOINT",
+                      "value": "[parameters('dceEndpoint')]"
+                    },
+                    {
+                      "name": "DCR_DAILY_SCORES_ID",
+                      "value": "[parameters('dcrDailyScoresImmutableId')]"
+                    },
+                    {
+                      "name": "DCR_WEEKLY_SNAPSHOTS_ID",
+                      "value": "[parameters('dcrWeeklySnapshotsImmutableId')]"
+                    },
+                    {
+                      "name": "DCR_INTUNE_ID",
+                      "value": "[parameters('dcrIntuneImmutableId')]"
+                    },
+                    {
+                      "name": "APP_CONFIG_ENDPOINT",
+                      "value": "[parameters('appConfigEndpoint')]"
+                    },
+                    {
+                      "name": "FUNCTIONS_EXTENSION_VERSION",
+                      "value": "~4"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', format('plan-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', format('stdefenderdash{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.Storage/storageAccounts', format('stdefenderdash{0}', parameters('resourceToken')))]",
+              "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', format('stdefenderdash{0}', parameters('resourceToken'))), parameters('identityId'), variables('storageBlobDataOwnerRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataOwnerRoleId'))]",
+                "principalId": "[reference(parameters('identityId'), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', format('stdefenderdash{0}', parameters('resourceToken')))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "functionAppName": {
+              "type": "string",
+              "metadata": {
+                "description": "Function App naam"
+              },
+              "value": "[format('func-defender-dashboard-{0}', parameters('resourceToken'))]"
+            },
+            "functionAppId": {
+              "type": "string",
+              "metadata": {
+                "description": "Function App resource ID"
+              },
+              "value": "[resourceId('Microsoft.Web/sites', format('func-defender-dashboard-{0}', parameters('resourceToken')))]"
+            },
+            "functionAppHostName": {
+              "type": "string",
+              "metadata": {
+                "description": "Function App default hostname"
+              },
+              "value": "[reference(resourceId('Microsoft.Web/sites', format('func-defender-dashboard-{0}', parameters('resourceToken'))), '2024-04-01').defaultHostName]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-app-config')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-dcr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-monitoring')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-rbac-workspace",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-workspace'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "functionAppPrincipalId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.principalId.value]"
+          },
+          "managementGroupObjectId": {
+            "value": "[parameters('managementGroupObjectId')]"
+          },
+          "werkplekGroupObjectId": {
+            "value": "[parameters('werkplekGroupObjectId')]"
+          },
+          "securityGroupObjectId": {
+            "value": "[parameters('securityGroupObjectId')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "12164998008976524693"
+            }
+          },
+          "parameters": {
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de Log Analytics workspace"
+              }
+            },
+            "managementGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Object ID van sg-defender-dashboard-management (optioneel, lege string = skip)"
+              }
+            },
+            "werkplekGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Object ID van sg-defender-dashboard-werkplek (optioneel)"
+              }
+            },
+            "securityGroupObjectId": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Object ID van sg-defender-dashboard-security (optioneel)"
+              }
+            },
+            "functionAppPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID van de Function App Managed Identity"
+              }
+            }
+          },
+          "variables": {
+            "logAnalyticsDataReaderRoleId": "3b03c2da-16b3-4a49-8834-0f8130efdd3b",
+            "workbookReaderRoleId": "b279062a-9be3-42a0-92ae-8b3cf002ec4d",
+            "workbookContributorRoleId": "e8ddcd69-c73f-4f9f-9844-4100522f16ad",
+            "monitoringMetricsPublisherRoleId": "3913510d-678f-4e67-9dde-b59c5db8a5b8",
+            "managementTableCondition": "(\r\n  (\r\n    !(ActionMatches{'Microsoft.OperationalInsights/workspaces/tables/data/read'})\r\n  )\r\n  OR\r\n  (\r\n    @Resource[Microsoft.OperationalInsights/workspaces/tables:name]\r\n    ForAllOfAnyValues:StringEquals {\r\n      'DefenderSecureScore_CL',\r\n      'DefenderExposureScore_CL',\r\n      'DefenderConfigurationScore_CL',\r\n      'DefenderAlertAggregates_CL',\r\n      'DefenderRecommendations_CL'\r\n    }\r\n  )\r\n)",
+            "werkplekTableCondition": "(\r\n  (\r\n    !(ActionMatches{'Microsoft.OperationalInsights/workspaces/tables/data/read'})\r\n  )\r\n  OR\r\n  (\r\n    @Resource[Microsoft.OperationalInsights/workspaces/tables:name]\r\n    ForAllOfAnyValues:StringEquals {\r\n      'DefenderDeviceInventory_CL',\r\n      'DefenderSoftwareInventory_CL',\r\n      'DefenderAVHealth_CL',\r\n      'DefenderSecureConfig_CL',\r\n      'DefenderVulnDelta_CL',\r\n      'IntuneDevices_CL',\r\n      'IntuneDetectedApps_CL',\r\n      'IntuneComplianceReports_CL'\r\n    }\r\n  )\r\n)"
+          },
+          "resources": [
+            {
+              "condition": "[not(empty(parameters('managementGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/')))]",
+              "name": "[guid(resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/'))), parameters('managementGroupObjectId'), variables('logAnalyticsDataReaderRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('logAnalyticsDataReaderRoleId'))]",
+                "principalId": "[parameters('managementGroupObjectId')]",
+                "principalType": "Group",
+                "condition": "[variables('managementTableCondition')]",
+                "conditionVersion": "2.0",
+                "description": "Management: Data Reader beperkt tot score/KPI-tabellen via ABAC"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('managementGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('managementGroupObjectId'), variables('workbookReaderRoleId'), 'workbook')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('workbookReaderRoleId'))]",
+                "principalId": "[parameters('managementGroupObjectId')]",
+                "principalType": "Group",
+                "description": "Management: Workbook Reader op resource group"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('werkplekGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/')))]",
+              "name": "[guid(resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/'))), parameters('werkplekGroupObjectId'), variables('logAnalyticsDataReaderRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('logAnalyticsDataReaderRoleId'))]",
+                "principalId": "[parameters('werkplekGroupObjectId')]",
+                "principalType": "Group",
+                "condition": "[variables('werkplekTableCondition')]",
+                "conditionVersion": "2.0",
+                "description": "Werkplek: Data Reader beperkt tot device/endpoint-tabellen via ABAC"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('werkplekGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('werkplekGroupObjectId'), variables('workbookReaderRoleId'), 'workbook')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('workbookReaderRoleId'))]",
+                "principalId": "[parameters('werkplekGroupObjectId')]",
+                "principalType": "Group",
+                "description": "Werkplek: Workbook Reader op resource group"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('securityGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/')))]",
+              "name": "[guid(resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/'))), parameters('securityGroupObjectId'), variables('logAnalyticsDataReaderRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('logAnalyticsDataReaderRoleId'))]",
+                "principalId": "[parameters('securityGroupObjectId')]",
+                "principalType": "Group",
+                "description": "Security: Data Reader met volledige tabeltoegang (geen ABAC-conditie)"
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('securityGroupObjectId')))]",
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "name": "[guid(resourceGroup().id, parameters('securityGroupObjectId'), variables('workbookContributorRoleId'), 'workbook')]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('workbookContributorRoleId'))]",
+                "principalId": "[parameters('securityGroupObjectId')]",
+                "principalType": "Group",
+                "description": "Security: Workbook Contributor op resource group"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/')))]",
+              "name": "[guid(resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/'))), parameters('functionAppPrincipalId'), variables('monitoringMetricsPublisherRoleId'))]",
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('monitoringMetricsPublisherRoleId'))]",
+                "principalId": "[parameters('functionAppPrincipalId')]",
+                "principalType": "ServicePrincipal",
+                "description": "Function App MI: Monitoring Metrics Publisher voor data ingestie"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-identity')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-workspace')]"
+      ]
+    },
+    {
+      "condition": "[not(empty(parameters('scriptRunnerIdentityId')))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-rbac-approles",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "identityPrincipalId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.principalId.value]"
+          },
+          "scriptRunnerIdentityId": {
+            "value": "[parameters('scriptRunnerIdentityId')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "13450436930388974741"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor alle resources"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor alle resources"
+              }
+            },
+            "identityPrincipalId": {
+              "type": "string",
+              "metadata": {
+                "description": "Principal ID (Object ID) van de Managed Identity"
+              }
+            },
+            "scriptRunnerIdentityId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van een UAMI die de deployment script uitvoert (moet AppRoleAssignment.ReadWrite.All hebben)"
+              }
+            },
+            "utcValue": {
+              "type": "string",
+              "defaultValue": "[utcNow()]",
+              "metadata": {
+                "description": "Timestamp voor force-rerun (gebruik utcNow())"
+              }
+            }
+          },
+          "variables": {
+            "$fxv#0": "<#\r\n.SYNOPSIS\r\n    Wijst Defender XDR en Microsoft Graph app roles toe aan een Managed Identity.\r\n.DESCRIPTION\r\n    Dit script wordt uitgevoerd via een Bicep deploymentScript.\r\n    De identity die dit script uitvoert moet AppRoleAssignment.ReadWrite.All hebben.\r\n.PARAMETER ManagedIdentityPrincipalId\r\n    Object ID van de Managed Identity waaraan de app roles worden toegewezen.\r\n#>\r\nparam(\r\n    [Parameter(Mandatory = $true)]\r\n    [string]$ManagedIdentityPrincipalId\r\n)\r\n\r\n$ErrorActionPreference = 'Stop'\r\n\r\n# Well-known Service Principal App IDs\r\n$defenderAppId = 'fc780465-2017-40d4-a0c5-307022471b92'  # WindowsDefenderATP\r\n$graphAppId = '00000003-0000-0000-c000-000000000000'      # Microsoft Graph\r\n\r\n# WindowsDefenderATP App Roles\r\n$defenderRoles = @{\r\n    'Score.Read.All'                  = '02b005dd-4237-4e38-b59f-fdb03dbb7e58'\r\n    'Machine.Read.All'                = 'ea8291d3-4b9a-44b5-bc3a-6cea3026dc79'\r\n    'Vulnerability.Read.All'          = '41269fc5-d04d-4bfd-bce7-43a51cea049a'\r\n    'Alert.Read.All'                  = '71fe6b80-efef-4ac2-a530-00d4755b6c67'\r\n    'AdvancedQuery.Read.All'          = '93489bf5-0fbc-4f2d-b901-33f2fe08ff05'\r\n    'SecurityRecommendation.Read.All' = '6443965c-7440-4abb-830f-f2f7be535ea0'\r\n    'Software.Read.All'               = '37f71c98-d198-41ae-964d-d4e3dddea1e3'\r\n}\r\n\r\n# Microsoft Graph App Roles\r\n$graphRoles = @{\r\n    'SecurityEvents.Read.All'                        = 'bf394140-e372-4bf9-a898-299cfc7564e5'\r\n    'ThreatHunting.Read.All'                         = 'dd98c7f5-2d42-42d8-a6d0-7b32b7f11dc0'\r\n    'SecurityAlert.Read.All'                         = '472e4a4d-bb4a-4026-98d1-0b0d74cb74a5'\r\n    'SecurityIncident.Read.All'                      = '45cc0394-e837-488b-a098-1918f48d186c'\r\n    'DeviceManagementManagedDevices.Read.All'         = '2f51be20-0bb4-4fed-bf7b-db946066c75e'\r\n    'DeviceManagementConfiguration.Read.All'          = 'dc377aa6-52d8-4e23-b271-b4ee8372acee'\r\n    'DeviceManagementApps.Read.All'                  = '7a6ee1e7-141e-4cec-ae74-d9db155731ff'\r\n}\r\n\r\nfunction Assign-AppRole {\r\n    param(\r\n        [string]$ServicePrincipalAppId,\r\n        [string]$AppRoleId,\r\n        [string]$AppRoleName,\r\n        [string]$PrincipalId\r\n    )\r\n\r\n    # Zoek de service principal op basis van appId\r\n    $sp = Get-MgServicePrincipal -Filter \"appId eq '$ServicePrincipalAppId'\" -Top 1\r\n\r\n    if (-not $sp) {\r\n        Write-Warning \"Service Principal met appId '$ServicePrincipalAppId' niet gevonden. Sla over.\"\r\n        return\r\n    }\r\n\r\n    # Controleer of de toewijzing al bestaat\r\n    $existing = Get-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $sp.Id |\r\n        Where-Object { $_.AppRoleId -eq $AppRoleId -and $_.PrincipalId -eq $PrincipalId }\r\n\r\n    if ($existing) {\r\n        Write-Output \"[OK] App role '$AppRoleName' is al toegewezen.\"\r\n        return\r\n    }\r\n\r\n    # Wijs de app role toe\r\n    $params = @{\r\n        PrincipalId = $PrincipalId\r\n        ResourceId  = $sp.Id\r\n        AppRoleId   = $AppRoleId\r\n    }\r\n\r\n    New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $PrincipalId -BodyParameter $params\r\n    Write-Output \"[OK] App role '$AppRoleName' succesvol toegewezen.\"\r\n}\r\n\r\n# Installeer Microsoft.Graph module als nodig\r\nif (-not (Get-Module -ListAvailable -Name Microsoft.Graph.Applications)) {\r\n    Install-Module Microsoft.Graph.Applications -Force -Scope CurrentUser -AllowClobber\r\n}\r\n\r\nImport-Module Microsoft.Graph.Applications\r\n\r\n# Connect via Managed Identity\r\nConnect-MgGraph -Identity\r\n\r\nWrite-Output \"=== WindowsDefenderATP App Roles ===\"\r\nforeach ($role in $defenderRoles.GetEnumerator()) {\r\n    Assign-AppRole -ServicePrincipalAppId $defenderAppId `\r\n                   -AppRoleId $role.Value `\r\n                   -AppRoleName $role.Key `\r\n                   -PrincipalId $ManagedIdentityPrincipalId\r\n}\r\n\r\nWrite-Output \"\"\r\nWrite-Output \"=== Microsoft Graph App Roles ===\"\r\nforeach ($role in $graphRoles.GetEnumerator()) {\r\n    Assign-AppRole -ServicePrincipalAppId $graphAppId `\r\n                   -AppRoleId $role.Value `\r\n                   -AppRoleName $role.Key `\r\n                   -PrincipalId $ManagedIdentityPrincipalId\r\n}\r\n\r\nWrite-Output \"\"\r\nWrite-Output \"Alle app role assignments voltooid.\"\r\n$DeploymentScriptOutputs = @{ status = 'success' }\r\n"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Resources/deploymentScripts",
+              "apiVersion": "2023-08-01",
+              "name": "script-assign-app-roles",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "AzurePowerShell",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('scriptRunnerIdentityId'))]": {}
+                }
+              },
+              "properties": {
+                "azPowerShellVersion": "11.0",
+                "retentionInterval": "PT1H",
+                "forceUpdateTag": "[parameters('utcValue')]",
+                "scriptContent": "[variables('$fxv#0')]",
+                "arguments": "[format('-ManagedIdentityPrincipalId \"{0}\"', parameters('identityPrincipalId'))]",
+                "timeout": "PT10M"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-identity')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "workspaceName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-workspace'), '2025-04-01').outputs.workspaceName.value]"
+    },
+    "workspaceId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-workspace'), '2025-04-01').outputs.workspaceId.value]"
+    },
+    "functionAppName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-function-app'), '2025-04-01').outputs.functionAppName.value]"
+    },
+    "functionAppHostName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-function-app'), '2025-04-01').outputs.functionAppHostName.value]"
+    },
+    "dceEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dceEndpoint.value]"
+    },
+    "appConfigEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-app-config'), '2025-04-01').outputs.appConfigEndpoint.value]"
+    },
+    "identityClientId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.clientId.value]"
+    },
+    "identityPrincipalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.principalId.value]"
+    }
+  }
+}
