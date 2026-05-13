@@ -8,6 +8,30 @@ permissions:
   contents: read
 
 jobs:
+  generate-check:
+    name: Connector Generation Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Run generator
+        run: python scripts/generate.py
+
+      - name: Check for uncommitted changes
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::Generated files are out of date. Run 'python scripts/generate.py' and commit."
+            git diff --stat
+            exit 1
+          fi
+
   bicep-lint:
     name: Bicep Lint
     runs-on: ubuntu-latest

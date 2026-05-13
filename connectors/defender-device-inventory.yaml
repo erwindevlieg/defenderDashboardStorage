@@ -1,0 +1,33 @@
+key: deviceInventory
+name: Defender Device Inventory
+table: DefenderDeviceInventory_CL
+schedule: weekly
+dcr: weekly
+plan: Basic
+totalRetention: 730
+
+url: https://api.securitycenter.microsoft.com/api/machines
+scope: https://api.securitycenter.microsoft.com/.default
+transform: list
+
+columns:
+  - name: DeviceId
+    type: string
+  - name: AadDeviceId
+    type: string
+  - name: DeviceName
+    type: string
+  - name: OsPlatform
+    type: string
+  - name: OsVersion
+    type: string
+  - name: RiskScore
+    type: string
+  - name: ExposureLevel
+    type: string
+  - name: HealthStatus
+    type: string
+  - name: OnboardingStatus
+    type: string
+  - name: LastSeen
+    type: datetime

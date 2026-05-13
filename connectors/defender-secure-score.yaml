@@ -1,0 +1,20 @@
+key: secureScore
+name: Microsoft Secure Score
+table: DefenderSecureScore_CL
+schedule: daily
+dcr: daily
+plan: Analytics
+retention: 730
+totalRetention: 2556
+
+url: https://graph.microsoft.com/v1.0/security/secureScores?$top=1
+scope: https://graph.microsoft.com/.default
+transform: graphList
+
+columns:
+  - name: CurrentScore
+    type: real
+  - name: MaxScore
+    type: real
+  - name: AverageComparativeScore
+    type: real

@@ -1,0 +1,29 @@
+key: secureConfig
+name: Defender Secure Configuration Assessment
+table: DefenderSecureConfig_CL
+schedule: weekly
+dcr: weekly
+plan: Basic
+totalRetention: 730
+
+url: https://api.securitycenter.microsoft.com/api/machines/SecureConfigurationsAssessmentByMachine
+scope: https://api.securitycenter.microsoft.com/.default
+transform: exportList
+
+columns:
+  - name: DeviceId
+    type: string
+  - name: AadDeviceId
+    type: string
+  - name: DeviceName
+    type: string
+  - name: ConfigurationId
+    type: string
+  - name: ConfigurationCategory
+    type: string
+  - name: ConfigurationSubcategory
+    type: string
+  - name: IsCompliant
+    type: boolean
+  - name: IsApplicable
+    type: boolean

@@ -1,13 +1,13 @@
 {
   "daily": [
     {
-      "key": "exposureScore",
-      "url": "https://api.securitycenter.microsoft.com/api/exposureScore",
+      "key": "alertAggregates",
+      "url": "https://api.securitycenter.microsoft.com/api/alerts",
       "method": "GET",
       "scope": "https://api.securitycenter.microsoft.com/.default",
-      "stream": "Custom-DefenderExposureScore_CL",
+      "stream": "Custom-DefenderAlertAggregates_CL",
       "dcr": "daily",
-      "transform": "single"
+      "transform": "list"
     },
     {
       "key": "configurationScore",
@@ -19,13 +19,13 @@
       "transform": "single"
     },
     {
-      "key": "secureScore",
-      "url": "https://graph.microsoft.com/v1.0/security/secureScores?$top=1",
+      "key": "exposureScore",
+      "url": "https://api.securitycenter.microsoft.com/api/exposureScore",
       "method": "GET",
-      "scope": "https://graph.microsoft.com/.default",
-      "stream": "Custom-DefenderSecureScore_CL",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderExposureScore_CL",
       "dcr": "daily",
-      "transform": "graphList"
+      "transform": "single"
     },
     {
       "key": "recommendations",
@@ -35,6 +35,15 @@
       "stream": "Custom-DefenderRecommendations_CL",
       "dcr": "daily",
       "transform": "list"
+    },
+    {
+      "key": "secureScore",
+      "url": "https://graph.microsoft.com/v1.0/security/secureScores?$top=1",
+      "method": "GET",
+      "scope": "https://graph.microsoft.com/.default",
+      "stream": "Custom-DefenderSecureScore_CL",
+      "dcr": "daily",
+      "transform": "graphList"
     },
     {
       "key": "vulnDelta",
@@ -48,6 +57,15 @@
   ],
   "weekly": [
     {
+      "key": "avHealth",
+      "url": "https://api.securitycenter.microsoft.com/api/deviceavstatus",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderAVHealth_CL",
+      "dcr": "weekly",
+      "transform": "exportList"
+    },
+    {
       "key": "deviceInventory",
       "url": "https://api.securitycenter.microsoft.com/api/machines",
       "method": "GET",
@@ -57,20 +75,11 @@
       "transform": "list"
     },
     {
-      "key": "softwareInventory",
-      "url": "https://api.securitycenter.microsoft.com/api/Software",
+      "key": "deviceSoftware",
+      "url": "https://api.securitycenter.microsoft.com/api/machines/SoftwareInventoryByMachine",
       "method": "GET",
       "scope": "https://api.securitycenter.microsoft.com/.default",
-      "stream": "Custom-DefenderSoftwareInventory_CL",
-      "dcr": "weekly",
-      "transform": "list"
-    },
-    {
-      "key": "avHealth",
-      "url": "https://api.securitycenter.microsoft.com/api/deviceavstatus",
-      "method": "GET",
-      "scope": "https://api.securitycenter.microsoft.com/.default",
-      "stream": "Custom-DefenderAVHealth_CL",
+      "stream": "Custom-DefenderDeviceSoftware_CL",
       "dcr": "weekly",
       "transform": "exportList"
     },
@@ -84,20 +93,20 @@
       "transform": "exportList"
     },
     {
-      "key": "deviceSoftware",
-      "url": "https://api.securitycenter.microsoft.com/api/machines/SoftwareInventoryByMachine",
+      "key": "softwareInventory",
+      "url": "https://api.securitycenter.microsoft.com/api/Software",
       "method": "GET",
       "scope": "https://api.securitycenter.microsoft.com/.default",
-      "stream": "Custom-DefenderDeviceSoftware_CL",
+      "stream": "Custom-DefenderSoftwareInventory_CL",
       "dcr": "weekly",
-      "transform": "exportList"
+      "transform": "list"
     },
     {
-      "key": "intuneDevices",
-      "url": "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices",
+      "key": "intuneCompliance",
+      "url": "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicySettingStateSummaries",
       "method": "GET",
       "scope": "https://graph.microsoft.com/.default",
-      "stream": "Custom-IntuneDevices_CL",
+      "stream": "Custom-IntuneComplianceReports_CL",
       "dcr": "intune",
       "transform": "graphList"
     },
@@ -107,6 +116,15 @@
       "method": "GET",
       "scope": "https://graph.microsoft.com/.default",
       "stream": "Custom-IntuneDetectedApps_CL",
+      "dcr": "intune",
+      "transform": "graphList"
+    },
+    {
+      "key": "intuneDevices",
+      "url": "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices",
+      "method": "GET",
+      "scope": "https://graph.microsoft.com/.default",
+      "stream": "Custom-IntuneDevices_CL",
       "dcr": "intune",
       "transform": "graphList"
     }

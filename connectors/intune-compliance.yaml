@@ -1,0 +1,27 @@
+key: intuneCompliance
+name: Intune Compliance Reports
+table: IntuneComplianceReports_CL
+schedule: weekly
+dcr: intune
+plan: Basic
+totalRetention: 730
+
+url: https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicySettingStateSummaries
+scope: https://graph.microsoft.com/.default
+transform: graphList
+
+columns:
+  - name: PolicyName
+    type: string
+  - name: PolicyId
+    type: string
+  - name: CompliantDevices
+    type: int
+  - name: NonCompliantDevices
+    type: int
+  - name: ErrorDevices
+    type: int
+  - name: NotApplicableDevices
+    type: int
+  - name: Platform
+    type: string

@@ -1,0 +1,33 @@
+key: intuneDevices
+name: Intune Managed Devices
+table: IntuneDevices_CL
+schedule: weekly
+dcr: intune
+plan: Basic
+totalRetention: 730
+
+url: https://graph.microsoft.com/v1.0/deviceManagement/managedDevices
+scope: https://graph.microsoft.com/.default
+transform: graphList
+
+columns:
+  - name: DeviceId
+    type: string
+  - name: AadDeviceId
+    type: string
+  - name: DeviceName
+    type: string
+  - name: OperatingSystem
+    type: string
+  - name: OsVersion
+    type: string
+  - name: ComplianceState
+    type: string
+  - name: EnrollmentType
+    type: string
+  - name: LastSyncDateTime
+    type: datetime
+  - name: ManagementAgent
+    type: string
+  - name: UserPrincipalName
+    type: string
