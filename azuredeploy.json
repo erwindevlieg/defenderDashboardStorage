@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "11587357104257951566"
+      "templateHash": "12711280975502549689"
     }
   },
   "parameters": {
@@ -53,6 +53,13 @@
       "defaultValue": "main",
       "metadata": {
         "description": "Branch voor code-deployment"
+      }
+    },
+    "alertEmail": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "E-mailadres voor alert notificaties (bijv. bij mislukte data-ingestie)"
       }
     }
   },
@@ -1813,6 +1820,9 @@
           },
           "workspaceId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-workspace'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "alertEmail": {
+            "value": "[parameters('alertEmail')]"
           }
         },
         "template": {
@@ -1822,7 +1832,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "4790028674981991437"
+              "templateHash": "411104879492220423"
             }
           },
           "parameters": {
@@ -1851,6 +1861,13 @@
               "metadata": {
                 "description": "Resource ID van de Log Analytics workspace"
               }
+            },
+            "alertEmail": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "E-mailadres voor alert notificaties (optioneel, lege string = geen e-mail)"
+              }
             }
           },
           "resources": [
@@ -1865,6 +1882,25 @@
                 "Application_Type": "web",
                 "WorkspaceResourceId": "[parameters('workspaceId')]",
                 "DisableLocalAuth": true
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('alertEmail')))]",
+              "type": "Microsoft.Insights/actionGroups",
+              "apiVersion": "2023-09-01-preview",
+              "name": "[format('ag-defender-dashboard-{0}', parameters('resourceToken'))]",
+              "location": "global",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "groupShortName": "DefDashboard",
+                "enabled": true,
+                "emailReceivers": [
+                  {
+                    "name": "admin",
+                    "emailAddress": "[parameters('alertEmail')]",
+                    "useCommonAlertSchema": true
+                  }
+                ]
               }
             },
             {
@@ -1896,9 +1932,11 @@
                       }
                     }
                   ]
-                }
+                },
+                "actions": "[if(not(empty(parameters('alertEmail'))), createObject('actionGroups', createArray(resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken'))))), createObject())]"
               },
               "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]",
                 "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
               ]
             },
@@ -1931,8 +1969,12 @@
                       }
                     }
                   ]
-                }
-              }
+                },
+                "actions": "[if(not(empty(parameters('alertEmail'))), createObject('actionGroups', createArray(resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken'))))), createObject())]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
             }
           ],
           "outputs": {

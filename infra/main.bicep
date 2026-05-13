@@ -29,6 +29,10 @@ param repoUrl string = ''
 @description('Branch voor code-deployment')
 param repoBranch string = 'main'
 
+// --- Notificaties ---
+@description('E-mailadres voor alert notificaties (bijv. bij mislukte data-ingestie)')
+param alertEmail string = ''
+
 // ============================================================
 // Module: Managed Identity
 // ============================================================
@@ -76,6 +80,7 @@ module monitoring 'modules/monitoring.bicep' = {
     resourceToken: resourceToken
     tags: tags
     workspaceId: workspace.outputs.workspaceId
+    alertEmail: alertEmail
   }
 }
 

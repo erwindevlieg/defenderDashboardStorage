@@ -14,6 +14,9 @@ param tags object = {}
 @description('Resource ID van de Log Analytics workspace')
 param workspaceId string
 
+@description('E-mailadres voor alert notificaties (optioneel, lege string = geen e-mail)')
+param alertEmail string = ''
+
 // ============================================================
 // Application Insights
 // ============================================================
@@ -26,6 +29,26 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     Application_Type: 'web'
     WorkspaceResourceId: workspaceId
     DisableLocalAuth: true
+  }
+}
+
+// ============================================================
+// Action Group — notificaties bij alerts
+// ============================================================
+resource actionGroup 'Microsoft.Insights/actionGroups@2023-09-01-preview' = if (!empty(alertEmail)) {
+  name: 'ag-defender-dashboard-${resourceToken}'
+  location: 'global'
+  tags: tags
+  properties: {
+    groupShortName: 'DefDashboard'
+    enabled: true
+    emailReceivers: [
+      {
+        name: 'admin'
+        emailAddress: alertEmail
+        useCommonAlertSchema: true
+      }
+    ]
   }
 }
 
@@ -58,6 +81,9 @@ resource alertFunctionFailures 'Microsoft.Insights/scheduledQueryRules@2023-03-1
         }
       ]
     }
+    actions: !empty(alertEmail) ? {
+      actionGroups: [ actionGroup.id ]
+    } : {}
   }
 }
 
@@ -90,6 +116,9 @@ resource alertMissingDailyData 'Microsoft.Insights/scheduledQueryRules@2023-03-1
         }
       ]
     }
+    actions: !empty(alertEmail) ? {
+      actionGroups: [ actionGroup.id ]
+    } : {}
   }
 }
 

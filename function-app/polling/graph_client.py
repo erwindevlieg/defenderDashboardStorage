@@ -4,6 +4,7 @@ Gebruikt voor Secure Score, Intune en Alert data via
 https://graph.microsoft.com.
 """
 
+import asyncio
 import logging
 
 import aiohttp
@@ -12,6 +13,8 @@ from azure.identity import DefaultAzureCredential
 logger = logging.getLogger(__name__)
 
 GRAPH_SCOPE = "https://graph.microsoft.com/.default"
+MAX_RETRIES = 3
+RETRY_BACKOFF_BASE = 2  # seconds
 
 
 class GraphClient:
@@ -29,6 +32,7 @@ class GraphClient:
         """Haal data op van een Graph API endpoint.
 
         Ondersteunt automatische paginering via @odata.nextLink.
+        Retry met exponential backoff bij throttling (429) en server errors (5xx).
 
         Args:
             url: Volledige URL van het API endpoint.
@@ -41,24 +45,9 @@ class GraphClient:
 
         async with aiohttp.ClientSession() as session:
             while current_url:
-                headers = {
-                    "Authorization": f"Bearer {self._get_token()}",
-                    "Content-Type": "application/json",
-                    "ConsistencyLevel": "eventual",
-                }
-
-                async with session.get(current_url, headers=headers) as response:
-                    if response.status != 200:
-                        body = await response.text()
-                        logger.error(
-                            "Graph API fout %d voor %s: %s",
-                            response.status,
-                            current_url,
-                            body[:500],
-                        )
-                        return None
-
-                    data = await response.json()
+                data = await self._request_with_retry(session, current_url)
+                if data is None:
+                    return None
 
                 # Eerste request: als het geen list-achtig antwoord is, direct retourneren
                 if not all_values and "value" not in data:
@@ -76,4 +65,67 @@ class GraphClient:
 
         if all_values:
             return {"value": all_values}
+        return None
+
+    async def _request_with_retry(
+        self, session: aiohttp.ClientSession, url: str
+    ) -> dict | None:
+        """Voer een HTTP GET uit met retry en exponential backoff."""
+        for attempt in range(MAX_RETRIES):
+            headers = {
+                "Authorization": f"Bearer {self._get_token()}",
+                "Content-Type": "application/json",
+                "ConsistencyLevel": "eventual",
+            }
+
+            try:
+                async with session.get(url, headers=headers) as response:
+                    if response.status == 200:
+                        return await response.json()
+
+                    if response.status == 429 or response.status >= 500:
+                        retry_after = int(
+                            response.headers.get(
+                                "Retry-After", RETRY_BACKOFF_BASE ** (attempt + 1)
+                            )
+                        )
+                        logger.warning(
+                            "Graph API %d voor %s, retry %d/%d na %ds",
+                            response.status,
+                            url,
+                            attempt + 1,
+                            MAX_RETRIES,
+                            retry_after,
+                        )
+                        await asyncio.sleep(retry_after)
+                        continue
+
+                    body = await response.text()
+                    logger.error(
+                        "Graph API fout %d voor %s: %s",
+                        response.status,
+                        url,
+                        body[:500],
+                    )
+                    return None
+
+            except aiohttp.ClientError as e:
+                if attempt < MAX_RETRIES - 1:
+                    wait = RETRY_BACKOFF_BASE ** (attempt + 1)
+                    logger.warning(
+                        "Graph API netwerk fout voor %s: %s, retry %d/%d na %ds",
+                        url,
+                        e,
+                        attempt + 1,
+                        MAX_RETRIES,
+                        wait,
+                    )
+                    await asyncio.sleep(wait)
+                else:
+                    logger.exception("Graph API definitief mislukt voor %s", url)
+                    return None
+
+        logger.error(
+            "Graph API max retries bereikt voor %s na %d pogingen", url, MAX_RETRIES
+        )
         return None
