@@ -106,7 +106,7 @@ class PollingEngine:
                 logger.info("Succesvol %d records geïngest voor %s", len(data), key)
 
             except Exception:
-                logger.exception("Fout bij verwerken van endpoint %s", key)
+                logger.error("Fout bij verwerken van endpoint %s", key)
 
     async def _fetch_data(self, endpoint: dict) -> list[dict]:
         """Haal data op via de juiste client op basis van scope."""

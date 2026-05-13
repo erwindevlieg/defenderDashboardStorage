@@ -43,7 +43,8 @@ class GraphClient:
         all_values: list[dict] = []
         current_url: str | None = url
 
-        async with aiohttp.ClientSession() as session:
+        timeout = aiohttp.ClientTimeout(total=30, connect=5, sock_read=15)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             while current_url:
                 data = await self._request_with_retry(session, current_url)
                 if data is None:
@@ -122,7 +123,7 @@ class GraphClient:
                     )
                     await asyncio.sleep(wait)
                 else:
-                    logger.exception("Graph API definitief mislukt voor %s", url)
+                    logger.error("Graph API definitief mislukt voor %s: %s", url, e)
                     return None
 
         logger.error(
