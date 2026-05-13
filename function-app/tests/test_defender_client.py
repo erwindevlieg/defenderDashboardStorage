@@ -112,7 +112,9 @@ class TestDefenderClientRetry:
         return mock_session
 
     @pytest.mark.asyncio
-    async def test_retry_on_429_throttling(self, mock_credential, sample_exposure_score):
+    async def test_retry_on_429_throttling(
+        self, mock_credential, sample_exposure_score
+    ):
         """Test that 429 triggers retry and eventual success."""
         client = DefenderClient(mock_credential)
 
@@ -122,13 +124,16 @@ class TestDefenderClientRetry:
         ]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
             result = await client.fetch(
                 "https://api.securitycenter.microsoft.com/api/exposureScore"
             )
@@ -151,13 +156,16 @@ class TestDefenderClientRetry:
         ]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock):
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             result = await client.fetch(
                 "https://api.securitycenter.microsoft.com/api/exposureScore"
             )
@@ -177,13 +185,16 @@ class TestDefenderClientRetry:
         ]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
             await client.fetch(
                 "https://api.securitycenter.microsoft.com/api/exposureScore"
             )
@@ -202,13 +213,16 @@ class TestDefenderClientRetry:
         ]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock):
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             result = await client.fetch(
                 "https://api.securitycenter.microsoft.com/api/exposureScore"
             )
@@ -224,13 +238,16 @@ class TestDefenderClientRetry:
         responses = [self._make_response(400)]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
             result = await client.fetch(
                 "https://api.securitycenter.microsoft.com/api/exposureScore"
             )
@@ -240,9 +257,7 @@ class TestDefenderClientRetry:
         mock_sleep.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_retry_on_network_error(
-        self, mock_credential, sample_exposure_score
-    ):
+    async def test_retry_on_network_error(self, mock_credential, sample_exposure_score):
         """Test that aiohttp.ClientError triggers retry."""
         client = DefenderClient(mock_credential)
 
@@ -263,13 +278,16 @@ class TestDefenderClientRetry:
         mock_session = AsyncMock()
         mock_session.get = MagicMock(side_effect=side_effect)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock):
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             result = await client.fetch(
                 "https://api.securitycenter.microsoft.com/api/exposureScore"
             )

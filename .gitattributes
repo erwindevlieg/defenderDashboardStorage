@@ -1,0 +1,2 @@
+# Force consistent line endings for generated ARM template
+azuredeploy.json text eol=lf

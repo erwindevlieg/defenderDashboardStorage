@@ -95,13 +95,16 @@ class TestGraphClientRetry:
         ]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
             result = await client.fetch(
                 "https://graph.microsoft.com/v1.0/security/secureScores?$top=1"
             )
@@ -124,13 +127,16 @@ class TestGraphClientRetry:
         ]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock):
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             result = await client.fetch(
                 "https://graph.microsoft.com/v1.0/security/secureScores?$top=1"
             )
@@ -150,13 +156,16 @@ class TestGraphClientRetry:
         ]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
             await client.fetch(
                 "https://graph.microsoft.com/v1.0/security/secureScores?$top=1"
             )
@@ -175,13 +184,16 @@ class TestGraphClientRetry:
         ]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock):
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             result = await client.fetch(
                 "https://graph.microsoft.com/v1.0/security/secureScores?$top=1"
             )
@@ -197,13 +209,16 @@ class TestGraphClientRetry:
         responses = [self._make_response(400)]
         mock_session = self._session_with_responses(responses)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
             result = await client.fetch(
                 "https://graph.microsoft.com/v1.0/security/secureScores?$top=1"
             )
@@ -236,13 +251,16 @@ class TestGraphClientRetry:
         mock_session = AsyncMock()
         mock_session.get = MagicMock(side_effect=side_effect)
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
+        with (
+            patch(
+                "aiohttp.ClientSession",
+                return_value=AsyncMock(
+                    __aenter__=AsyncMock(return_value=mock_session),
+                    __aexit__=AsyncMock(return_value=False),
+                ),
             ),
-        ), patch("asyncio.sleep", new_callable=AsyncMock):
+            patch("asyncio.sleep", new_callable=AsyncMock),
+        ):
             result = await client.fetch(
                 "https://graph.microsoft.com/v1.0/security/secureScores?$top=1"
             )

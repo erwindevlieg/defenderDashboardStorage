@@ -87,7 +87,10 @@ class PollingEngine:
         failed = await self._process_endpoints(endpoints)
         self._failed_daily = failed
         if failed:
-            logger.warning("%d dagelijkse endpoints mislukt, worden volgende run opnieuw geprobeerd", len(failed))
+            logger.warning(
+                "%d dagelijkse endpoints mislukt, worden volgende run opnieuw geprobeerd",
+                len(failed),
+            )
         logger.info("Dagelijkse polling run voltooid")
 
     async def run_weekly(self) -> None:
@@ -104,7 +107,10 @@ class PollingEngine:
         failed = await self._process_endpoints(weekly)
         self._failed_weekly = failed
         if failed:
-            logger.warning("%d wekelijkse endpoints mislukt, worden volgende run opnieuw geprobeerd", len(failed))
+            logger.warning(
+                "%d wekelijkse endpoints mislukt, worden volgende run opnieuw geprobeerd",
+                len(failed),
+            )
         logger.info("Wekelijkse polling run voltooid")
 
     async def _process_endpoints(self, endpoints: list[dict]) -> list[dict]:

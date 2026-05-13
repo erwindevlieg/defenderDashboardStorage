@@ -28,6 +28,8 @@ jobs:
 
       - name: Compare with committed azuredeploy.json
         run: |
+          # Normalize line endings before comparing (Windows builds use CRLF)
+          sed -i 's/\r$//' azuredeploy.json
           if ! diff -q azuredeploy.json azuredeploy.check.json > /dev/null 2>&1; then
             echo "::error::azuredeploy.json is out of date. Run 'az bicep build --file infra/main.bicep --outfile azuredeploy.json' and commit."
             diff azuredeploy.json azuredeploy.check.json | head -50
