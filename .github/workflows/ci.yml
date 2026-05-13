@@ -11,35 +11,6 @@ permissions:
 
 jobs:
   # ============================================================
-  # Connector generation check — ensures generated files match
-  # connector YAML manifests. Catches forgotten regeneration.
-  # ============================================================
-  generate-check:
-    name: Connector Sync Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install PyYAML
-        run: pip install pyyaml
-
-      - name: Run generator
-        run: python scripts/generate.py
-
-      - name: Verify generated files are up to date
-        run: |
-          if ! git diff --quiet; then
-            echo "::error::Generated files are out of date. Run 'python scripts/generate.py' and commit the results."
-            git diff --stat
-            git diff
-            exit 1
-          fi
-
-  # ============================================================
   # ARM template sync — ensures azuredeploy.json matches Bicep.
   # Locally you may forget to recompile after Bicep changes.
   # ============================================================
@@ -77,8 +48,6 @@ jobs:
         with:
           inlineScript: |
             az bicep build --file infra/main.bicep --stdout > /dev/null
-            az bicep build --file infra/generated/tables.bicep --stdout > /dev/null
-            az bicep build --file infra/generated/dcr.bicep --stdout > /dev/null
 
   # ============================================================
   # Python lint + format — ruff catches bugs, style issues,
@@ -109,7 +78,7 @@ jobs:
         run: ruff format --check .
 
   # ============================================================
-  # Python tests — run full test suite with coverage
+  # Python tests — run full test suite
   # ============================================================
   python-test:
     name: Python Tests
@@ -147,71 +116,3 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           extra_args: --only-verified
-
-  # ============================================================
-  # YAML validation — ensures connector manifests are valid
-  # ============================================================
-  yaml-validate:
-    name: Connector YAML Validation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install pyyaml
-
-      - name: Validate connector manifests
-        run: |
-          python -c "
-          import yaml, sys, pathlib
-
-          required = {'key','name','table','schedule','dcr','url','scope','transform','plan','totalRetention','columns'}
-          valid_plans = {'Analytics','Basic'}
-          valid_schedules = {'daily','weekly'}
-          valid_transforms = {'single','list','graphList','exportList'}
-          valid_types = {'string','int','real','datetime','boolean','dynamic'}
-          errors = []
-
-          for f in sorted(pathlib.Path('connectors').glob('*.yaml')):
-              with open(f) as fh:
-                  data = yaml.safe_load(fh)
-              if data is None:
-                  continue
-
-              missing = required - set(data.keys())
-              if missing:
-                  errors.append(f'{f.name}: missing fields: {missing}')
-                  continue
-
-              if not data['table'].endswith('_CL'):
-                  errors.append(f'{f.name}: table must end with _CL')
-              if data['plan'] not in valid_plans:
-                  errors.append(f'{f.name}: plan must be Analytics or Basic')
-              if data['plan'] == 'Analytics' and 'retention' not in data:
-                  errors.append(f'{f.name}: Analytics plan requires retention field')
-              if data['schedule'] not in valid_schedules:
-                  errors.append(f'{f.name}: schedule must be daily or weekly')
-              if data['transform'] not in valid_transforms:
-                  errors.append(f'{f.name}: invalid transform: {data[\"transform\"]}')
-
-              keys_seen = set()
-              for col in data['columns']:
-                  if col['type'] not in valid_types:
-                      errors.append(f'{f.name}: invalid column type: {col[\"type\"]}')
-                  if col['name'] == 'TimeGenerated':
-                      errors.append(f'{f.name}: do not include TimeGenerated (added automatically)')
-                  if col['name'] in keys_seen:
-                      errors.append(f'{f.name}: duplicate column: {col[\"name\"]}')
-                  keys_seen.add(col['name'])
-
-          if errors:
-              for e in errors:
-                  print(f'::error::{e}')
-              sys.exit(1)
-          else:
-              print(f'All connector manifests valid')
-          "

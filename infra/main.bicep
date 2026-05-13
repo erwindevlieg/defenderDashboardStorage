@@ -143,6 +143,20 @@ module rbacAppRoles 'modules/rbac-approles.bicep' = if (!empty(scriptRunnerIdent
 }
 
 // ============================================================
+// Module: Custom Connectors (voeg hier eigen databronnen toe)
+// ============================================================
+module custom 'custom/custom.bicep' = {
+  name: 'deploy-custom-connectors'
+  params: {
+    workspaceId: workspace.outputs.workspaceId
+    dceId: dcr.outputs.dceId
+    location: location
+    resourceToken: resourceToken
+    tags: tags
+  }
+}
+
+// ============================================================
 // Outputs
 // ============================================================
 output workspaceName string = workspace.outputs.workspaceName

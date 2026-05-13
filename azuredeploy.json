@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "7422089716155879809"
+      "templateHash": "12055220055517445841"
     }
   },
   "parameters": {
@@ -2794,6 +2794,93 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'deploy-identity')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-custom-connectors",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-workspace'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "dceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dceId.value]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "resourceToken": {
+            "value": "[parameters('resourceToken')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "9621025160289428566"
+            }
+          },
+          "parameters": {
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de Log Analytics workspace"
+              }
+            },
+            "dceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de Data Collection Endpoint"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor alle resources"
+              }
+            },
+            "resourceToken": {
+              "type": "string",
+              "metadata": {
+                "description": "Unieke token voor resource namen"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor alle resources"
+              }
+            }
+          },
+          "variables": {
+            "_dependencies": [
+              "[parameters('workspaceId')]",
+              "[parameters('dceId')]",
+              "[parameters('location')]",
+              "[parameters('resourceToken')]",
+              "[string(parameters('tags'))]"
+            ]
+          },
+          "resources": []
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-dcr')]",
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-workspace')]"
       ]
     }
   ],

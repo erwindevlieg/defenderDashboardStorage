@@ -25,8 +25,8 @@ pip install ruff && ruff check function-app/ && ruff format --check function-app
 # Bicep validation
 az bicep build --file infra/main.bicep
 
-# Regenerate from connector manifests
-pip install pyyaml && python scripts/generate.py
+# Regenerate from connector manifests (not needed unless adding a new source)
+# See docs/adding-connectors.md
 
 # Recompile Deploy to Azure template
 az bicep build --file infra/main.bicep --outfile azuredeploy.json
@@ -34,12 +34,11 @@ az bicep build --file infra/main.bicep --outfile azuredeploy.json
 
 ## Key Conventions
 
-- **Pluggable connectors:** Each data source is a YAML file in `connectors/`. Run `scripts/generate.py` to regenerate Bicep and endpoints.json.
+- **Pluggable:** Nieuwe databronnen toevoegen door 3 bestanden aan te passen (workspace.bicep, dcr.bicep, endpoints.json). Zie `docs/adding-connectors.md`.
 - All Bicep modules are in `infra/modules/` and orchestrated by `infra/main.bicep`
-- Auto-generated Bicep from connectors is in `infra/generated/`
 - Python code follows Azure Functions v2 programming model
 - Config-driven polling: endpoint definitions live in Azure App Configuration (fallback: `function-app/config/endpoints.json`)
 - Custom Log Analytics tables use `_CL` suffix
 - Reports and research are in Dutch; code and comments are in English
 - Per-persona access via ABAC conditions on Log Analytics Data Reader role
-- After changing connectors or Bicep, recompile `azuredeploy.json` for the Deploy to Azure button
+- After changing Bicep, recompile `azuredeploy.json` for the Deploy to Azure button

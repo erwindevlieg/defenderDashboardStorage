@@ -59,15 +59,11 @@ Zie [docs/bootstrap.md](docs/bootstrap.md) voor:
 - **Dashboards:** Azure Monitor Workbooks
 - **IaC:** Bicep (modulair) + Deploy to Azure
 
-## Connector toevoegen (pluggable)
+## Databron toevoegen
 
-Voeg een YAML-bestand toe aan `connectors/` en draai de generator:
+Kopieer `infra/custom/_example.bicep`, pas het aan, en activeer het in `infra/custom/custom.bicep`. Voeg een endpoint toe in `endpoints.json` en deploy opnieuw.
 
-```bash
-python scripts/generate.py
-```
-
-Zie [docs/adding-connectors.md](docs/adding-connectors.md) voor de volledige handleiding.
+Zie [docs/adding-connectors.md](docs/adding-connectors.md) voor de volledige stap-voor-stap handleiding.
 
 ## Lokaal ontwikkelen
 
@@ -90,12 +86,9 @@ ruff format --check .
 ## Projectstructuur
 
 ```
-connectors/      — YAML connector manifests (single source of truth)
 infra/           — Bicep templates (modulair)
-infra/generated/ — Auto-gegenereerde Bicep (vanuit connectors/)
 function-app/    — Azure Function App (Python)
 workbooks/       — Azure Monitor Workbook ARM templates
-scripts/         — Generator en helper scripts
 docs/            — Documentatie
 azuredeploy.json — ARM template (voor Deploy to Azure knop)
 ```
