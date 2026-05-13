@@ -2,6 +2,7 @@
 
 Leest endpoint-configuratie uit Azure App Configuration en
 orkestreert API-calls + data-ingestie.
+Houdt mislukte endpoints bij voor retry in de volgende run.
 """
 
 import json
@@ -26,6 +27,8 @@ class PollingEngine:
         self._defender = DefenderClient(self._credential)
         self._graph = GraphClient(self._credential)
         self._ingestion = IngestionClient(self._credential)
+        self._failed_daily: list[dict] = []
+        self._failed_weekly: list[dict] = []
 
     def _load_endpoints(self, prefix: str) -> list[dict]:
         """Laad endpoint-configuratie uit App Configuration.
@@ -70,26 +73,48 @@ class PollingEngine:
         return all_endpoints.get(frequency, [])
 
     async def run_daily(self) -> None:
-        """Voer alle dagelijkse polls uit."""
+        """Voer alle dagelijkse polls uit, inclusief retry van eerder mislukte endpoints."""
         logger.info("Start dagelijkse polling run")
         endpoints = self._load_endpoints("endpoints:daily")
-        await self._process_endpoints(endpoints)
+
+        # Retry eerder mislukte endpoints
+        if self._failed_daily:
+            retry_count = len(self._failed_daily)
+            logger.info("Retry %d eerder mislukte dagelijkse endpoints", retry_count)
+            endpoints = self._failed_daily + endpoints
+            self._failed_daily = []
+
+        failed = await self._process_endpoints(endpoints)
+        self._failed_daily = failed
+        if failed:
+            logger.warning("%d dagelijkse endpoints mislukt, worden volgende run opnieuw geprobeerd", len(failed))
         logger.info("Dagelijkse polling run voltooid")
 
     async def run_weekly(self) -> None:
-        """Voer alle wekelijkse polls uit (inclusief Intune)."""
+        """Voer alle wekelijkse polls uit, inclusief retry van eerder mislukte endpoints."""
         logger.info("Start wekelijkse polling run")
         weekly = self._load_endpoints("endpoints:weekly")
-        await self._process_endpoints(weekly)
+
+        if self._failed_weekly:
+            retry_count = len(self._failed_weekly)
+            logger.info("Retry %d eerder mislukte wekelijkse endpoints", retry_count)
+            weekly = self._failed_weekly + weekly
+            self._failed_weekly = []
+
+        failed = await self._process_endpoints(weekly)
+        self._failed_weekly = failed
+        if failed:
+            logger.warning("%d wekelijkse endpoints mislukt, worden volgende run opnieuw geprobeerd", len(failed))
         logger.info("Wekelijkse polling run voltooid")
 
-    async def _process_endpoints(self, endpoints: list[dict]) -> None:
-        """Verwerk een lijst endpoints: ophalen + ingestie."""
+    async def _process_endpoints(self, endpoints: list[dict]) -> list[dict]:
+        """Verwerk een lijst endpoints: ophalen + ingestie. Retourneert mislukte endpoints."""
         dcr_map = {
             "daily": os.environ.get("DCR_DAILY_SCORES_ID", ""),
             "weekly": os.environ.get("DCR_WEEKLY_SNAPSHOTS_ID", ""),
             "intune": os.environ.get("DCR_INTUNE_ID", ""),
         }
+        failed: list[dict] = []
 
         for ep in endpoints:
             key = ep.get("key", ep.get("stream", "unknown"))
@@ -107,6 +132,9 @@ class PollingEngine:
 
             except Exception:
                 logger.error("Fout bij verwerken van endpoint %s", key)
+                failed.append(ep)
+
+        return failed
 
     async def _fetch_data(self, endpoint: dict) -> list[dict]:
         """Haal data op via de juiste client op basis van scope."""
@@ -127,23 +155,9 @@ class PollingEngine:
             return []
 
         if transform == "single":
-            # Enkel object (bijv. Exposure Score)
             return [raw] if isinstance(raw, dict) else []
 
-        if transform == "list":
-            # Defender-stijl: { "value": [...] }
-            if isinstance(raw, dict):
-                return raw.get("value", [])
-            return raw if isinstance(raw, list) else []
-
-        if transform == "graphList":
-            # Graph-stijl: { "value": [...] } met @odata.nextLink
-            if isinstance(raw, dict):
-                return raw.get("value", [])
-            return raw if isinstance(raw, list) else []
-
-        if transform == "exportList":
-            # Export API: { "value": [...] } met paginering
+        if transform in ("list", "graphList", "exportList"):
             if isinstance(raw, dict):
                 return raw.get("value", [])
             return raw if isinstance(raw, list) else []

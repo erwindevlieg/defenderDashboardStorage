@@ -151,9 +151,7 @@ Open `function-app/config/endpoints.json` en voeg toe aan het juiste schedule-bl
 | Transform | API response formaat | Gebruik voor |
 |---|---|---|
 | `single` | `{ "score": 42 }` | Enkel object (bijv. Exposure Score) |
-| `list` | `{ "value": [...] }` | Defender-stijl lijst |
-| `graphList` | `{ "value": [...], "@odata.nextLink": "..." }` | Microsoft Graph API |
-| `exportList` | `{ "value": [...] }` | Defender export/assessment APIs |
+| `list` | `{ "value": [...] }` | Lijst met items (Defender, Graph, en export APIs) |
 
 ### Scope waarden
 
@@ -180,11 +178,7 @@ Daarna opnieuw deployen:
 - **Deploy to Azure knop** opnieuw klikken (idempotent — alleen nieuwe resources worden aangemaakt)
 - Of: `az deployment group create --resource-group rg-defender-dashboard --template-file infra/main.bicep --parameters infra/main.bicepparam`
 
-Na infra-deployment ook de Function App code opnieuw deployen:
-```bash
-cd function-app
-func azure functionapp publish <functionAppName> --python
-```
+> De Function App code wordt automatisch gedeployed als je bij de eerste deployment een `repoUrl` hebt opgegeven.
 
 ## Data koppelen
 

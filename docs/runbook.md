@@ -10,9 +10,15 @@ union withsource=TableName
   DefenderExposureScore_CL,
   DefenderSecureScore_CL,
   DefenderConfigurationScore_CL,
-  DefenderRecommendations_CL
+  DefenderAlertAggregates_CL,
+  DefenderRecommendations_CL,
+  DefenderDeviceInventory_CL,
+  DefenderAVHealth_CL,
+  DefenderVulnDelta_CL,
+  IntuneDevices_CL
 | summarize LastRecord = max(TimeGenerated) by TableName
 | extend HoursAgo = datetime_diff('hour', now(), LastRecord)
+| extend Status = iff(HoursAgo > 48, '🔴 Verouderd', iff(HoursAgo > 24, '🟡 Aandacht', '🟢 OK'))
 | order by HoursAgo desc
 ```
 
@@ -20,7 +26,8 @@ union withsource=TableName
 
 - **Azure Portal:** Function App → Functions → Monitor
 - **Application Insights:** Failures blade voor foutanalyse
-- **Alert:** `alert-defender-function-failures-*` stuurt notificaties bij >3 failures
+- **Alert:** `alert-defender-function-failures-*` stuurt e-mail bij >3 failures
+- **Alert:** `alert-defender-missing-data-*` stuurt e-mail bij ontbrekende data
 
 ---
 
@@ -30,7 +37,7 @@ union withsource=TableName
 
 1. **Controleer Function App logs:**
    ```bash
-   az functionapp log tail --name func-defender-dashboard-prod01 --resource-group rg-defender-dashboard
+   az functionapp log tail --name func-defender-dashboard-<token> --resource-group rg-defender-dashboard
    ```
 
 2. **Controleer token propagation:**
@@ -53,10 +60,13 @@ union withsource=TableName
 - Bij grote datasets (>10.000 apparaten): overweeg paginering in batches
 - Controleer `host.json` voor `functionTimeout` instelling
 
-### RBAC problemen
+### Retry en backfill
 
-- **ABAC niet actief:** Controleer dat workspace Access Control Mode = "Require workspace permissions"
-- **Gebruiker ziet alle tabellen:** Zoek naar conflicterende `*/read` rollen (Reader, LA Reader, Monitoring Reader) op hogere scopes
+De polling engine heeft ingebouwde retry- en backfill-logica:
+
+- **Retry:** 3x exponentieel backoff (2, 4, 8 seconden) bij 429/5xx fouten
+- **Backfill:** Gefaalde endpoints worden bij de volgende run opnieuw geprobeerd
+- **Niet-retryable:** 400, 401, 403 worden direct overgeslagen (configuratiefout)
 
 ---
 
@@ -74,13 +84,16 @@ union withsource=TableName
 
 3. Voeg de stream toe aan de juiste DCR in `dcr.bicep`
 
-4. Deploy infra via GitHub Actions (`infra/` wijziging)
+4. Recompile en deploy:
+   ```bash
+   az bicep build --file infra/main.bicep --outfile azuredeploy.json
+   ```
 
 ### Via Code (nieuw transform type)
 
 1. Voeg transform logica toe aan `polling/engine.py` → `_transform()`
 2. Voeg tests toe aan `tests/test_engine.py`
-3. Deploy function app via GitHub Actions
+3. Deploy function app opnieuw
 
 ---
 
@@ -95,7 +108,7 @@ properties: {
 }
 ```
 
-Deploy via `deploy-infra.yml`.
+Of pas de workspace-brede retentie aan via de `retentionInDays` parameter (standaard 90 dagen).
 
 > ⚠️ Bij verkorten van retentie: Azure wacht 30 dagen voordat data daadwerkelijk wordt verwijderd.
 
@@ -103,13 +116,47 @@ Deploy via `deploy-infra.yml`.
 
 ## Kosten Monitoring
 
-Verwachte kosten (~5.000 apparaten):
+### Verwachte kosten (~5.000 apparaten)
+
 - **Log Analytics:** ~€2-6/maand (< 2 GB ingestie)
 - **Function App:** ~€0/maand (binnen free tier)
 - **App Configuration:** €0/maand (free tier)
 - **Application Insights:** Inbegrepen bij LA workspace
 
-Monitor via Azure Cost Management:
+### KQL: Ingestie per tabel (afgelopen 30 dagen)
+
+```kusto
+Usage
+| where TimeGenerated > ago(30d)
+| where DataType endswith "_CL"
+| summarize IngestieGB = sum(Quantity) / 1024 by DataType
+| extend KostenAnalytics_EUR = round(IngestieGB * 2.76, 2)
+| extend KostenBasic_EUR = round(IngestieGB * 0.56, 2)
+| order by IngestieGB desc
+```
+
+### KQL: Dagelijkse ingestie trend
+
+```kusto
+Usage
+| where TimeGenerated > ago(30d)
+| where DataType endswith "_CL"
+| summarize DagGB = sum(Quantity) / 1024 by bin(TimeGenerated, 1d)
+| order by TimeGenerated asc
+```
+
+### KQL: Maandelijkse kosten schatting
+
+```kusto
+Usage
+| where TimeGenerated > ago(30d)
+| where DataType endswith "_CL"
+| summarize TotaalGB = sum(Quantity) / 1024
+| extend MaandKosten_EUR = round(TotaalGB * 2.76, 2)
+| project TotaalGB = round(TotaalGB, 4), MaandKosten_EUR
+```
+
+Monitor ook via Azure Cost Management:
 ```
 Resource Group: rg-defender-dashboard
 ```

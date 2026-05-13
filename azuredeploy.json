@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "16941028882337160845"
+      "templateHash": "7341550623161366157"
     }
   },
   "parameters": {
@@ -60,6 +60,15 @@
       "defaultValue": "",
       "metadata": {
         "description": "E-mailadres voor alert notificaties (bijv. bij mislukte data-ingestie)"
+      }
+    },
+    "retentionInDays": {
+      "type": "int",
+      "defaultValue": 90,
+      "minValue": 30,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Retentie in dagen voor Log Analytics data (standaard 90)"
       }
     }
   },
@@ -176,6 +185,9 @@
           },
           "tags": {
             "value": "[parameters('tags')]"
+          },
+          "retentionInDays": {
+            "value": "[parameters('retentionInDays')]"
           }
         },
         "template": {
@@ -185,7 +197,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "17278638039065244804"
+              "templateHash": "8873948922268066201"
             }
           },
           "parameters": {
@@ -215,6 +227,15 @@
               "metadata": {
                 "description": "Dagelijks ingestie quotum in GB (bescherming tegen kosten-explosie)"
               }
+            },
+            "retentionInDays": {
+              "type": "int",
+              "defaultValue": 90,
+              "minValue": 30,
+              "maxValue": 730,
+              "metadata": {
+                "description": "Retentie in dagen voor de workspace (standaard 90, CIS 5.3.1 minimum)"
+              }
             }
           },
           "resources": [
@@ -228,7 +249,7 @@
                 "sku": {
                   "name": "PerGB2018"
                 },
-                "retentionInDays": 90,
+                "retentionInDays": "[parameters('retentionInDays')]",
                 "workspaceCapping": {
                   "dailyQuotaGb": "[parameters('dailyQuotaGb')]"
                 },
@@ -458,7 +479,8 @@
               "apiVersion": "2022-10-01",
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderDeviceInventory_CL')]",
               "properties": {
-                "plan": "Basic",
+                "plan": "Analytics",
+                "retentionInDays": 365,
                 "totalRetentionInDays": 730,
                 "schema": {
                   "name": "DefenderDeviceInventory_CL",
@@ -517,59 +539,11 @@
             {
               "type": "Microsoft.OperationalInsights/workspaces/tables",
               "apiVersion": "2022-10-01",
-              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSoftwareInventory_CL')]",
-              "properties": {
-                "plan": "Basic",
-                "totalRetentionInDays": 730,
-                "schema": {
-                  "name": "DefenderSoftwareInventory_CL",
-                  "columns": [
-                    {
-                      "name": "TimeGenerated",
-                      "type": "datetime"
-                    },
-                    {
-                      "name": "SoftwareId",
-                      "type": "string"
-                    },
-                    {
-                      "name": "SoftwareName",
-                      "type": "string"
-                    },
-                    {
-                      "name": "SoftwareVendor",
-                      "type": "string"
-                    },
-                    {
-                      "name": "SoftwareVersion",
-                      "type": "string"
-                    },
-                    {
-                      "name": "NumberOfWeaknesses",
-                      "type": "int"
-                    },
-                    {
-                      "name": "NumberOfDevices",
-                      "type": "int"
-                    },
-                    {
-                      "name": "EndOfSupportStatus",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
-              ]
-            },
-            {
-              "type": "Microsoft.OperationalInsights/workspaces/tables",
-              "apiVersion": "2022-10-01",
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAVHealth_CL')]",
               "properties": {
-                "plan": "Basic",
-                "totalRetentionInDays": 365,
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 730,
                 "schema": {
                   "name": "DefenderAVHealth_CL",
                   "columns": [
@@ -616,6 +590,175 @@
                     {
                       "name": "QuickScanTime",
                       "type": "datetime"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderVulnDelta_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderVulnDelta_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AadDeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "CveId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "EventType",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVendor",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "VulnerabilitySeverityLevel",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'IntuneDevices_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "IntuneDevices_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AadDeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DeviceName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "OperatingSystem",
+                      "type": "string"
+                    },
+                    {
+                      "name": "OsVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ComplianceState",
+                      "type": "string"
+                    },
+                    {
+                      "name": "EnrollmentType",
+                      "type": "string"
+                    },
+                    {
+                      "name": "LastSyncDateTime",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "ManagementAgent",
+                      "type": "string"
+                    },
+                    {
+                      "name": "UserPrincipalName",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSoftwareInventory_CL')]",
+              "properties": {
+                "plan": "Basic",
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderSoftwareInventory_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "SoftwareId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVendor",
+                      "type": "string"
+                    },
+                    {
+                      "name": "SoftwareVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "NumberOfWeaknesses",
+                      "type": "int"
+                    },
+                    {
+                      "name": "NumberOfDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "EndOfSupportStatus",
+                      "type": "string"
                     }
                   ]
                 }
@@ -680,63 +823,6 @@
             {
               "type": "Microsoft.OperationalInsights/workspaces/tables",
               "apiVersion": "2022-10-01",
-              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderVulnDelta_CL')]",
-              "properties": {
-                "plan": "Basic",
-                "totalRetentionInDays": 730,
-                "schema": {
-                  "name": "DefenderVulnDelta_CL",
-                  "columns": [
-                    {
-                      "name": "TimeGenerated",
-                      "type": "datetime"
-                    },
-                    {
-                      "name": "DeviceId",
-                      "type": "string"
-                    },
-                    {
-                      "name": "AadDeviceId",
-                      "type": "string"
-                    },
-                    {
-                      "name": "CveId",
-                      "type": "string"
-                    },
-                    {
-                      "name": "EventType",
-                      "type": "string"
-                    },
-                    {
-                      "name": "SoftwareId",
-                      "type": "string"
-                    },
-                    {
-                      "name": "SoftwareName",
-                      "type": "string"
-                    },
-                    {
-                      "name": "SoftwareVendor",
-                      "type": "string"
-                    },
-                    {
-                      "name": "SoftwareVersion",
-                      "type": "string"
-                    },
-                    {
-                      "name": "VulnerabilitySeverityLevel",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
-              ]
-            },
-            {
-              "type": "Microsoft.OperationalInsights/workspaces/tables",
-              "apiVersion": "2022-10-01",
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderDeviceSoftware_CL')]",
               "properties": {
                 "plan": "Basic",
@@ -774,67 +860,6 @@
                     },
                     {
                       "name": "SoftwareVersion",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
-              ]
-            },
-            {
-              "type": "Microsoft.OperationalInsights/workspaces/tables",
-              "apiVersion": "2022-10-01",
-              "name": "[format('{0}/{1}', parameters('workspaceName'), 'IntuneDevices_CL')]",
-              "properties": {
-                "plan": "Basic",
-                "totalRetentionInDays": 730,
-                "schema": {
-                  "name": "IntuneDevices_CL",
-                  "columns": [
-                    {
-                      "name": "TimeGenerated",
-                      "type": "datetime"
-                    },
-                    {
-                      "name": "DeviceId",
-                      "type": "string"
-                    },
-                    {
-                      "name": "AadDeviceId",
-                      "type": "string"
-                    },
-                    {
-                      "name": "DeviceName",
-                      "type": "string"
-                    },
-                    {
-                      "name": "OperatingSystem",
-                      "type": "string"
-                    },
-                    {
-                      "name": "OsVersion",
-                      "type": "string"
-                    },
-                    {
-                      "name": "ComplianceState",
-                      "type": "string"
-                    },
-                    {
-                      "name": "EnrollmentType",
-                      "type": "string"
-                    },
-                    {
-                      "name": "LastSyncDateTime",
-                      "type": "datetime"
-                    },
-                    {
-                      "name": "ManagementAgent",
-                      "type": "string"
-                    },
-                    {
-                      "name": "UserPrincipalName",
                       "type": "string"
                     }
                   ]
@@ -2751,6 +2776,100 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'deploy-identity')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-workbooks",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "workspaceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-workspace'), '2025-04-01').outputs.workspaceId.value]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.43.8.12551",
+              "templateHash": "11638439056085444523"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Locatie voor resources"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID van de Log Analytics workspace"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags voor resources"
+              }
+            }
+          },
+          "variables": {
+            "managementSerializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"# Defender Dashboard — Management\\n\\nOverzicht van security KPIs en trends.\"},\"name\":\"header\"},{\"type\":1,\"content\":{\"json\":\"## 📊 Data Freshness\"},\"name\":\"freshnessHeader\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"union withsource=TableName\\n  DefenderExposureScore_CL,\\n  DefenderSecureScore_CL,\\n  DefenderConfigurationScore_CL,\\n  DefenderAlertAggregates_CL,\\n  DefenderRecommendations_CL\\n| summarize LastRecord=max(TimeGenerated) by TableName\\n| extend HoursAgo=datetime_diff('hour', now(), LastRecord)\\n| extend Status=iff(HoursAgo > 48, '🔴 Verouderd', iff(HoursAgo > 24, '🟡 Aandacht', '🟢 OK'))\\n| project TableName, LastRecord, HoursAgo, Status\\n| order by HoursAgo desc\",\"size\":0,\"title\":\"Data Versheid (Management Tabellen)\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\",\"gridSettings\":{\"formatters\":[{\"columnMatch\":\"Status\",\"formatter\":0},{\"columnMatch\":\"HoursAgo\",\"formatter\":8,\"formatOptions\":{\"palette\":\"redGreen\",\"compositeBarSettings\":{\"labelText\":\"\",\"columnSettings\":[]}}}]}},\"name\":\"freshness\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderExposureScore_CL\\n| summarize Score=avg(ExposureScore) by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Exposure Score Trend\",\"timeContext\":{\"durationMs\":2592000000},\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\",\"chartSettings\":{\"yAxis\":[\"Score\"],\"ySettings\":{\"min\":0,\"max\":100}}},\"name\":\"exposureScoreTrend\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderSecureScore_CL\\n| summarize Score=avg(CurrentScore), MaxScore=avg(MaxScore) by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Secure Score Trend\",\"timeContext\":{\"durationMs\":2592000000},\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\"},\"name\":\"secureScoreTrend\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderConfigurationScore_CL\\n| summarize Score=avg(ConfigurationScore) by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Configuration Score Trend\",\"timeContext\":{\"durationMs\":2592000000},\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\"},\"name\":\"configScoreTrend\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderAlertAggregates_CL\\n| summarize AvgMTTR=avg(MTTR_Hours), AvgMTTD=avg(MTTD_Hours) by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"MTTR / MTTD Trend (uren)\",\"timeContext\":{\"durationMs\":2592000000},\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\"},\"name\":\"mttrMttdTrend\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderAlertAggregates_CL\\n| top 1 by TimeGenerated\\n| project TotalAlerts, HighSeverity, MediumSeverity, LowSeverity\",\"size\":4,\"title\":\"Laatste Alert Verdeling\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Column1\"},\"showBorder\":true}},\"name\":\"alertSummary\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderRecommendations_CL\\n| where TimeGenerated > ago(1d)\\n| summarize Count=count() by Severity\\n| order by Count desc\",\"size\":0,\"title\":\"Open Recommendations per Severity\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"recommendationsBySeverity\"}],\"fallbackResourceIds\":[\"\"]}",
+            "werkplekSerializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"# Defender Dashboard — Werkplek\\n\\nOperationeel overzicht van devices, software en compliance.\"},\"name\":\"header\"},{\"type\":1,\"content\":{\"json\":\"## 📊 Data Freshness\"},\"name\":\"freshnessHeader\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"union withsource=TableName\\n  DefenderDeviceInventory_CL,\\n  DefenderAVHealth_CL,\\n  DefenderVulnDelta_CL,\\n  DefenderSoftwareInventory_CL,\\n  DefenderSecureConfig_CL,\\n  DefenderDeviceSoftware_CL,\\n  IntuneDevices_CL,\\n  IntuneDetectedApps_CL,\\n  IntuneComplianceReports_CL\\n| summarize LastRecord=max(TimeGenerated) by TableName\\n| extend HoursAgo=datetime_diff('hour', now(), LastRecord)\\n| extend Status=iff(HoursAgo > 192, '🔴 Verouderd', iff(HoursAgo > 168, '🟡 Aandacht', '🟢 OK'))\\n| project TableName, LastRecord, HoursAgo, Status\\n| order by HoursAgo desc\",\"size\":0,\"title\":\"Data Versheid (Werkplek Tabellen)\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\",\"gridSettings\":{\"formatters\":[{\"columnMatch\":\"Status\",\"formatter\":0},{\"columnMatch\":\"HoursAgo\",\"formatter\":8,\"formatOptions\":{\"palette\":\"redGreen\",\"compositeBarSettings\":{\"labelText\":\"\",\"columnSettings\":[]}}}]}},\"name\":\"freshness\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderDeviceInventory_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| summarize Count=count() by RiskScore\\n| order by Count desc\",\"size\":0,\"title\":\"Devices per Risk Score\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"devicesByRisk\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderDeviceInventory_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| summarize Count=count() by HealthStatus\\n| order by Count desc\",\"size\":0,\"title\":\"Devices per Health Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"devicesByHealth\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderDeviceInventory_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| summarize Count=count() by OsPlatform\\n| order by Count desc\",\"size\":0,\"title\":\"Devices per OS Platform\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"name\":\"devicesByOS\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderAVHealth_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| extend SignatureAge = datetime_diff('day', now(), AVSignatureUpdateTime)\\n| summarize Outdated=countif(SignatureAge > 7), Current=countif(SignatureAge <= 7)\",\"size\":4,\"title\":\"AV Signature Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\"},\"name\":\"avHealth\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"IntuneDevices_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| summarize Count=count() by ComplianceState\\n| order by Count desc\",\"size\":0,\"title\":\"Intune Compliance Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"intuneCompliance\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderSoftwareInventory_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by SoftwareId\\n| where NumberOfWeaknesses > 0\\n| top 20 by NumberOfWeaknesses desc\\n| project SoftwareName, SoftwareVendor, NumberOfWeaknesses, NumberOfDevices, EndOfSupportStatus\",\"size\":0,\"title\":\"Top 20 Software met Kwetsbaarheden\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"topVulnSoftware\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderSecureConfig_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId, ConfigurationId\\n| where IsApplicable == true\\n| summarize Compliant=countif(IsCompliant == true), NonCompliant=countif(IsCompliant == false) by ConfigurationCategory\",\"size\":0,\"title\":\"Configuration Compliance per Categorie\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\",\"chartSettings\":{\"seriesLabelSettings\":[{\"seriesName\":\"Compliant\",\"color\":\"green\"},{\"seriesName\":\"NonCompliant\",\"color\":\"red\"}]}},\"name\":\"configCompliance\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderVulnDelta_CL\\n| where TimeGenerated > ago(30d)\\n| summarize NewVulns=countif(EventType == 'New'), FixedVulns=countif(EventType == 'Fixed') by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Vulnerability Delta Trend (30 dagen)\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\"},\"name\":\"vulnDeltaTrend\"}],\"fallbackResourceIds\":[\"\"]}"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/workbooks",
+              "apiVersion": "2023-06-01",
+              "name": "[guid('management-dashboard', resourceGroup().id)]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "shared",
+              "properties": {
+                "displayName": "Defender Dashboard — Management",
+                "category": "workbook",
+                "sourceId": "[parameters('workspaceId')]",
+                "serializedData": "[variables('managementSerializedData')]",
+                "version": "1.0"
+              }
+            },
+            {
+              "type": "Microsoft.Insights/workbooks",
+              "apiVersion": "2023-06-01",
+              "name": "[guid('werkplek-dashboard', resourceGroup().id)]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "shared",
+              "properties": {
+                "displayName": "Defender Dashboard — Werkplek",
+                "category": "workbook",
+                "sourceId": "[parameters('workspaceId')]",
+                "serializedData": "[variables('werkplekSerializedData')]",
+                "version": "1.0"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'deploy-workspace')]"
       ]
     },
     {

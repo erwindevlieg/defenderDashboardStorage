@@ -33,6 +33,12 @@ param repoBranch string = 'main'
 @description('E-mailadres voor alert notificaties (bijv. bij mislukte data-ingestie)')
 param alertEmail string = ''
 
+// --- Retentie ---
+@description('Retentie in dagen voor Log Analytics data (standaard 90)')
+@minValue(30)
+@maxValue(730)
+param retentionInDays int = 90
+
 // ============================================================
 // Module: Managed Identity
 // ============================================================
@@ -54,6 +60,7 @@ module workspace 'modules/workspace.bicep' = {
     location: location
     workspaceName: 'law-defender-dashboard-${resourceToken}'
     tags: tags
+    retentionInDays: retentionInDays
   }
 }
 
@@ -140,6 +147,18 @@ module rbacAppRoles 'modules/rbac-approles.bicep' = if (!empty(scriptRunnerIdent
     tags: tags
     identityPrincipalId: identity.outputs.principalId
     scriptRunnerIdentityId: scriptRunnerIdentityId
+  }
+}
+
+// ============================================================
+// Module: Workbooks (dashboards auto-deploy)
+// ============================================================
+module workbooks 'modules/workbooks.bicep' = {
+  name: 'deploy-workbooks'
+  params: {
+    location: location
+    workspaceId: workspace.outputs.workspaceId
+    tags: tags
   }
 }
 

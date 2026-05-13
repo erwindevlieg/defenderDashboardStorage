@@ -14,6 +14,11 @@ param tags object = {}
 @description('Dagelijks ingestie quotum in GB (bescherming tegen kosten-explosie)')
 param dailyQuotaGb int = 10
 
+@description('Retentie in dagen voor de workspace (standaard 90, CIS 5.3.1 minimum)')
+@minValue(30)
+@maxValue(730)
+param retentionInDays int = 90
+
 // ============================================================
 // Workspace
 // ============================================================
@@ -23,7 +28,7 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   tags: tags
   properties: {
     sku: { name: 'PerGB2018' }
-    retentionInDays: 90 // CIS 5.3.1 minimum
+    retentionInDays: retentionInDays
 
     workspaceCapping: {
       dailyQuotaGb: dailyQuotaGb
@@ -157,20 +162,23 @@ resource tableRecommendations 'Microsoft.OperationalInsights/workspaces/tables@2
 }
 
 // ============================================================
-// Custom Tabellen — Basic Plan (archief, goedkoper)
+// Custom Tabellen — Analytics Plan (dashboard queries + joins)
 // ============================================================
+
+// DeviceInventory: Analytics — wordt gejoind met AVHealth, VulnDelta, IntuneDevices
 resource tableDeviceInventory 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderDeviceInventory_CL'
   properties: {
-    plan: 'Basic'
+    plan: 'Analytics'
+    retentionInDays: 365
     totalRetentionInDays: 730
     schema: {
       name: 'DefenderDeviceInventory_CL'
       columns: [
         { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }        // MDE device ID
-        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — universal join key
+        { name: 'DeviceId', type: 'string' }
+        { name: 'AadDeviceId', type: 'string' }
         { name: 'DeviceName', type: 'string' }
         { name: 'OsPlatform', type: 'string' }
         { name: 'OsVersion', type: 'string' }
@@ -184,6 +192,89 @@ resource tableDeviceInventory 'Microsoft.OperationalInsights/workspaces/tables@2
   }
 }
 
+// AVHealth: Analytics — join met DeviceInventory voor AV status per device
+resource tableAVHealth 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'DefenderAVHealth_CL'
+  properties: {
+    plan: 'Analytics'
+    retentionInDays: 365
+    totalRetentionInDays: 730
+    schema: {
+      name: 'DefenderAVHealth_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'DeviceId', type: 'string' }
+        { name: 'AadDeviceId', type: 'string' }
+        { name: 'DeviceName', type: 'string' }
+        { name: 'AVEngineVersion', type: 'string' }
+        { name: 'AVSignatureVersion', type: 'string' }
+        { name: 'AVPlatformVersion', type: 'string' }
+        { name: 'AVMode', type: 'string' }
+        { name: 'AVSignatureUpdateTime', type: 'datetime' }
+        { name: 'QuickScanResult', type: 'string' }
+        { name: 'QuickScanTime', type: 'datetime' }
+      ]
+    }
+  }
+}
+
+// VulnDelta: Analytics — join met DeviceInventory voor vulns per device
+resource tableVulnDelta 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'DefenderVulnDelta_CL'
+  properties: {
+    plan: 'Analytics'
+    retentionInDays: 365
+    totalRetentionInDays: 730
+    schema: {
+      name: 'DefenderVulnDelta_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'DeviceId', type: 'string' }
+        { name: 'AadDeviceId', type: 'string' }
+        { name: 'CveId', type: 'string' }
+        { name: 'EventType', type: 'string' }
+        { name: 'SoftwareId', type: 'string' }
+        { name: 'SoftwareName', type: 'string' }
+        { name: 'SoftwareVendor', type: 'string' }
+        { name: 'SoftwareVersion', type: 'string' }
+        { name: 'VulnerabilitySeverityLevel', type: 'string' }
+      ]
+    }
+  }
+}
+
+// IntuneDevices: Analytics — join met DeviceInventory via AadDeviceId
+resource tableIntuneDevices 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'IntuneDevices_CL'
+  properties: {
+    plan: 'Analytics'
+    retentionInDays: 365
+    totalRetentionInDays: 730
+    schema: {
+      name: 'IntuneDevices_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'DeviceId', type: 'string' }
+        { name: 'AadDeviceId', type: 'string' }
+        { name: 'DeviceName', type: 'string' }
+        { name: 'OperatingSystem', type: 'string' }
+        { name: 'OsVersion', type: 'string' }
+        { name: 'ComplianceState', type: 'string' }
+        { name: 'EnrollmentType', type: 'string' }
+        { name: 'LastSyncDateTime', type: 'datetime' }
+        { name: 'ManagementAgent', type: 'string' }
+        { name: 'UserPrincipalName', type: 'string' }
+      ]
+    }
+  }
+}
+
+// ============================================================
+// Custom Tabellen — Basic Plan (standalone queries, goedkoper)
+// ============================================================
 resource tableSoftwareInventory 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderSoftwareInventory_CL'
@@ -201,31 +292,6 @@ resource tableSoftwareInventory 'Microsoft.OperationalInsights/workspaces/tables
         { name: 'NumberOfWeaknesses', type: 'int' }
         { name: 'NumberOfDevices', type: 'int' }
         { name: 'EndOfSupportStatus', type: 'string' }
-      ]
-    }
-  }
-}
-
-resource tableAVHealth 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
-  parent: workspace
-  name: 'DefenderAVHealth_CL'
-  properties: {
-    plan: 'Basic'
-    totalRetentionInDays: 365
-    schema: {
-      name: 'DefenderAVHealth_CL'
-      columns: [
-        { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }        // MDE device ID
-        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — join met Intune
-        { name: 'DeviceName', type: 'string' }
-        { name: 'AVEngineVersion', type: 'string' }
-        { name: 'AVSignatureVersion', type: 'string' }
-        { name: 'AVPlatformVersion', type: 'string' }
-        { name: 'AVMode', type: 'string' }
-        { name: 'AVSignatureUpdateTime', type: 'datetime' }
-        { name: 'QuickScanResult', type: 'string' }
-        { name: 'QuickScanTime', type: 'datetime' }
       ]
     }
   }
@@ -249,30 +315,6 @@ resource tableSecureConfig 'Microsoft.OperationalInsights/workspaces/tables@2022
         { name: 'ConfigurationSubcategory', type: 'string' }
         { name: 'IsCompliant', type: 'boolean' }
         { name: 'IsApplicable', type: 'boolean' }
-      ]
-    }
-  }
-}
-
-resource tableVulnDelta 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
-  parent: workspace
-  name: 'DefenderVulnDelta_CL'
-  properties: {
-    plan: 'Basic'
-    totalRetentionInDays: 730
-    schema: {
-      name: 'DefenderVulnDelta_CL'
-      columns: [
-        { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }        // MDE device ID
-        { name: 'AadDeviceId', type: 'string' }     // Entra device ID
-        { name: 'CveId', type: 'string' }
-        { name: 'EventType', type: 'string' } // New, Fixed, Updated
-        { name: 'SoftwareId', type: 'string' }      // Join met SoftwareInventory
-        { name: 'SoftwareName', type: 'string' }
-        { name: 'SoftwareVendor', type: 'string' }
-        { name: 'SoftwareVersion', type: 'string' }
-        { name: 'VulnerabilitySeverityLevel', type: 'string' }
       ]
     }
   }
@@ -304,33 +346,8 @@ resource tableDeviceSoftware 'Microsoft.OperationalInsights/workspaces/tables@20
 }
 
 // ============================================================
-// Intune Tabellen — Basic Plan
+// Intune Tabellen — Basic Plan (standalone)
 // ============================================================
-resource tableIntuneDevices 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
-  parent: workspace
-  name: 'IntuneDevices_CL'
-  properties: {
-    plan: 'Basic'
-    totalRetentionInDays: 730
-    schema: {
-      name: 'IntuneDevices_CL'
-      columns: [
-        { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }         // Intune device ID
-        { name: 'AadDeviceId', type: 'string' }      // Entra device ID — join met Defender
-        { name: 'DeviceName', type: 'string' }
-        { name: 'OperatingSystem', type: 'string' }
-        { name: 'OsVersion', type: 'string' }
-        { name: 'ComplianceState', type: 'string' }
-        { name: 'EnrollmentType', type: 'string' }
-        { name: 'LastSyncDateTime', type: 'datetime' }
-        { name: 'ManagementAgent', type: 'string' }
-        { name: 'UserPrincipalName', type: 'string' }
-      ]
-    }
-  }
-}
-
 resource tableIntuneApps 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'IntuneDetectedApps_CL'

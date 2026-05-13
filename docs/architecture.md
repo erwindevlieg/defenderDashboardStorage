@@ -4,12 +4,6 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    GitHub Actions CI/CD                       │
-│  validate.yml → deploy-infra.yml → deploy-function.yml      │
-└──────────────────────────────┬────────────────────────────────┘
-                               │ OIDC
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
 │                      Azure Resource Group                    │
 │                                                               │
 │  ┌──────────────────┐    ┌──────────────────────────────┐   │
@@ -37,22 +31,22 @@
 │          │  │ Log Analytics Workspace                │        │
 │          │  │ (law-defender-dashboard-*)             │        │
 │          │  │                                        │        │
-│          │  │ Analytics: ExposureScore, SecureScore, │        │
-│          │  │   ConfigScore, Alerts, Recommendations │        │
-│          │  │ Basic: Devices, Software, AV, Config,  │        │
-│          │  │   VulnDelta, Intune*                   │        │
+│          │  │ Analytics: Scores, Alerts, Recommend., │        │
+│          │  │   DeviceInventory, AVHealth, VulnDelta,│        │
+│          │  │   IntuneDevices                        │        │
+│          │  │ Basic: Software, Config, DeviceSoftware│        │
+│          │  │   IntuneApps, IntuneCompliance         │        │
 │          │  └───────────────────────────────────────┘        │
 │          │             │                                      │
 │          │             ▼                                      │
 │          │  ┌───────────────────────┐                        │
 │          └─▶│ Azure Monitor         │                        │
-│             │ Workbooks             │                        │
+│             │ Workbooks (auto-deploy)│                        │
 │             └───────────────────────┘                        │
 │                                                               │
 │  ┌──────────────────┐  ┌──────────────────┐                 │
-│  │ Application       │  │ Alerts            │                 │
-│  │ Insights          │  │ (function fail,   │                 │
-│  │ (telemetry)       │  │  missing data)    │                 │
+│  │ Application       │  │ Alerts + Action   │                 │
+│  │ Insights          │  │ Group (e-mail)    │                 │
 │  └──────────────────┘  └──────────────────┘                 │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -61,22 +55,49 @@
 
 | Component | Service | Doel |
 |---|---|---|
-| **Polling Engine** | Azure Function App (Flex Consumption) | Config-driven API polling |
+| **Polling Engine** | Azure Function App (Flex Consumption) | Config-driven API polling met retry + backfill |
 | **Identity** | User-Assigned Managed Identity | Credential-free authenticatie |
 | **Configuratie** | Azure App Configuration | Endpoint definities (zero-code changes) |
 | **Ingestie** | Logs Ingestion API (DCR/DCE) | Data transformatie + schrijven naar LA |
-| **Opslag** | Log Analytics Workspace | Custom _CL tabellen met per-tabel retentie |
-| **Dashboards** | Azure Monitor Workbooks | Interactieve visualisatie |
-| **Monitoring** | Application Insights + Alerts | Health monitoring |
+| **Opslag** | Log Analytics Workspace | Custom _CL tabellen (Analytics + Basic tier) |
+| **Dashboards** | Azure Monitor Workbooks | Auto-deployed via Bicep, incl. data freshness |
+| **Monitoring** | Application Insights + Alerts | Health monitoring + e-mail notificaties |
 | **IaC** | Bicep (modulair) | Alle infra als code |
-| **CI/CD** | GitHub Actions (OIDC) | Geautomatiseerde deployment |
+| **Deployment** | Deploy to Azure knop | One-click deployment vanuit GitHub |
+
+## Tabel Tiers
+
+### Analytics Plan (volledige KQL, joins, dashboards)
+
+| Tabel | Reden |
+|---|---|
+| ExposureScore, SecureScore, ConfigurationScore | Score-tijdlijnen, verwaarloosbaar volume |
+| AlertAggregates | MTTR/MTTD trends |
+| Recommendations | Dashboard aggregaties per severity/status |
+| DeviceInventory | Hub-tabel — alles jointed hierop |
+| AVHealth | Join met DeviceInventory voor AV status |
+| VulnDelta | Join met DeviceInventory voor vulns per device |
+| IntuneDevices | Cross-platform join via AadDeviceId |
+
+### Basic Plan (standalone queries, goedkoper)
+
+| Tabel | Reden |
+|---|---|
+| SoftwareInventory | Standalone catalogus |
+| SecureConfig | Groot volume, standalone compliance queries |
+| DeviceSoftware | Link-tabel, groot volume |
+| IntuneDetectedApps | Geaggregeerd overzicht |
+| IntuneComplianceReports | Geaggregeerd overzicht |
 
 ## Beveiligingsmodel
 
-- **Authenticatie:** Entra ID only (`disableLocalAuth: true`)
-- **Autorisatie:** ABAC-condities op Log Analytics Data Reader per persona
+- **Authenticatie:** Entra ID only (`disableLocalAuth: true` op alle services)
+- **Identity:** User-Assigned Managed Identity (geen secrets)
+- **Storage:** Shared key access uitgeschakeld, OAuth-only
 - **Netwerk:** Publiek met RBAC (migreerbaar naar Private Link)
 - **Versleuteling:** Microsoft-Managed Keys (AES-256)
+- **Retry:** 3x exponentieel backoff met Retry-After header support
+- **Alerting:** E-mail notificaties bij function failures of ontbrekende data
 
 ## API Endpoints
 
