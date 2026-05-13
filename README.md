@@ -4,9 +4,7 @@ Platform voor het opslaan van historische data uit Microsoft Defender XDR en Int
 
 ## Deploy to Azure
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2F__OWNER__%2FdefenderDashboardStorage%2Fmain%2Fazuredeploy.json)
-
-> **Let op:** Pas de URL hierboven aan met je eigen GitHub gebruikersnaam/organisatie in plaats van `__OWNER__`.
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ferwindevlieg%2FdefenderDashboardStorage%2Fmain%2Fazuredeploy.json)
 
 ### Wat wordt er gedeployed?
 
