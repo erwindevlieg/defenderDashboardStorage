@@ -1,8 +1,7 @@
 """Tests voor de Polling Engine."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 
 from polling.engine import PollingEngine
 
@@ -12,7 +11,9 @@ class TestPollingEngine:
 
     def test_transform_single(self, mock_credential):
         """Test transformatie van een enkel object."""
-        with patch("polling.engine.DefaultAzureCredential", return_value=mock_credential):
+        with patch(
+            "polling.engine.DefaultAzureCredential", return_value=mock_credential
+        ):
             engine = PollingEngine()
 
         result = engine._transform({"score": 33.49}, "single")
@@ -20,7 +21,9 @@ class TestPollingEngine:
 
     def test_transform_single_none(self, mock_credential):
         """Test transformatie van None."""
-        with patch("polling.engine.DefaultAzureCredential", return_value=mock_credential):
+        with patch(
+            "polling.engine.DefaultAzureCredential", return_value=mock_credential
+        ):
             engine = PollingEngine()
 
         result = engine._transform(None, "single")
@@ -28,7 +31,9 @@ class TestPollingEngine:
 
     def test_transform_list(self, mock_credential, sample_device_list):
         """Test transformatie van een list response."""
-        with patch("polling.engine.DefaultAzureCredential", return_value=mock_credential):
+        with patch(
+            "polling.engine.DefaultAzureCredential", return_value=mock_credential
+        ):
             engine = PollingEngine()
 
         result = engine._transform(sample_device_list, "list")
@@ -37,7 +42,9 @@ class TestPollingEngine:
 
     def test_transform_graph_list(self, mock_credential, sample_graph_secure_scores):
         """Test transformatie van een Graph list response."""
-        with patch("polling.engine.DefaultAzureCredential", return_value=mock_credential):
+        with patch(
+            "polling.engine.DefaultAzureCredential", return_value=mock_credential
+        ):
             engine = PollingEngine()
 
         result = engine._transform(sample_graph_secure_scores, "graphList")
@@ -46,7 +53,9 @@ class TestPollingEngine:
 
     def test_transform_empty_value(self, mock_credential):
         """Test transformatie van lege value array."""
-        with patch("polling.engine.DefaultAzureCredential", return_value=mock_credential):
+        with patch(
+            "polling.engine.DefaultAzureCredential", return_value=mock_credential
+        ):
             engine = PollingEngine()
 
         result = engine._transform({"value": []}, "list")
@@ -54,7 +63,9 @@ class TestPollingEngine:
 
     def test_load_fallback_endpoints(self, mock_credential):
         """Test fallback endpoint loading uit JSON."""
-        with patch("polling.engine.DefaultAzureCredential", return_value=mock_credential):
+        with patch(
+            "polling.engine.DefaultAzureCredential", return_value=mock_credential
+        ):
             engine = PollingEngine()
 
         daily = engine._load_fallback_endpoints("endpoints:daily")
@@ -63,7 +74,9 @@ class TestPollingEngine:
 
     def test_load_fallback_weekly(self, mock_credential):
         """Test fallback endpoint loading voor wekelijks."""
-        with patch("polling.engine.DefaultAzureCredential", return_value=mock_credential):
+        with patch(
+            "polling.engine.DefaultAzureCredential", return_value=mock_credential
+        ):
             engine = PollingEngine()
 
         weekly = engine._load_fallback_endpoints("endpoints:weekly")

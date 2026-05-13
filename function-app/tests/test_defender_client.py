@@ -28,16 +28,23 @@ class TestDefenderClient:
         mock_response.json = AsyncMock(return_value=sample_exposure_score)
 
         mock_session = AsyncMock()
-        mock_session.get = MagicMock(return_value=AsyncMock(
-            __aenter__=AsyncMock(return_value=mock_response),
-            __aexit__=AsyncMock(return_value=False),
-        ))
+        mock_session.get = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_response),
+                __aexit__=AsyncMock(return_value=False),
+            )
+        )
 
-        with patch("aiohttp.ClientSession", return_value=AsyncMock(
-            __aenter__=AsyncMock(return_value=mock_session),
-            __aexit__=AsyncMock(return_value=False),
-        )):
-            result = await client.fetch("https://api.securitycenter.microsoft.com/api/exposureScore")
+        with patch(
+            "aiohttp.ClientSession",
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_session),
+                __aexit__=AsyncMock(return_value=False),
+            ),
+        ):
+            result = await client.fetch(
+                "https://api.securitycenter.microsoft.com/api/exposureScore"
+            )
 
         assert result is not None
         assert result["score"] == 33.49
@@ -52,16 +59,23 @@ class TestDefenderClient:
         mock_response.json = AsyncMock(return_value=sample_device_list)
 
         mock_session = AsyncMock()
-        mock_session.get = MagicMock(return_value=AsyncMock(
-            __aenter__=AsyncMock(return_value=mock_response),
-            __aexit__=AsyncMock(return_value=False),
-        ))
+        mock_session.get = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_response),
+                __aexit__=AsyncMock(return_value=False),
+            )
+        )
 
-        with patch("aiohttp.ClientSession", return_value=AsyncMock(
-            __aenter__=AsyncMock(return_value=mock_session),
-            __aexit__=AsyncMock(return_value=False),
-        )):
-            result = await client.fetch("https://api.securitycenter.microsoft.com/api/machines")
+        with patch(
+            "aiohttp.ClientSession",
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_session),
+                __aexit__=AsyncMock(return_value=False),
+            ),
+        ):
+            result = await client.fetch(
+                "https://api.securitycenter.microsoft.com/api/machines"
+            )
 
         assert result is not None
         assert len(result["value"]) == 2

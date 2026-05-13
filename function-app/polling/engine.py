@@ -102,9 +102,7 @@ class PollingEngine:
 
                 dcr_id = dcr_map.get(ep.get("dcr", "daily"), "")
                 stream = ep["stream"]
-                self._ingestion.upload(
-                    dcr_id=dcr_id, stream_name=stream, records=data
-                )
+                self._ingestion.upload(dcr_id=dcr_id, stream_name=stream, records=data)
                 logger.info("Succesvol %d records geïngest voor %s", len(data), key)
 
             except Exception:

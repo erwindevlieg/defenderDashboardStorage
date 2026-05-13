@@ -68,7 +68,9 @@ class IngestionClient:
                 stream_name=stream_name,
                 logs=records,
             )
-            logger.info("Upload succesvol: %d records naar %s", len(records), stream_name)
+            logger.info(
+                "Upload succesvol: %d records naar %s", len(records), stream_name
+            )
         except Exception:
             logger.exception(
                 "Upload mislukt voor stream %s (%d records)", stream_name, len(records)
