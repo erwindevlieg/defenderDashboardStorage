@@ -84,6 +84,15 @@
       "transform": "exportList"
     },
     {
+      "key": "deviceSoftware",
+      "url": "https://api.securitycenter.microsoft.com/api/machines/SoftwareInventoryByMachine",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderDeviceSoftware_CL",
+      "dcr": "weekly",
+      "transform": "exportList"
+    },
+    {
       "key": "intuneDevices",
       "url": "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices",
       "method": "GET",

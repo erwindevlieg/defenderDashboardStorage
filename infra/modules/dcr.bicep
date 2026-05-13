@@ -208,6 +208,18 @@ resource dcrWeeklySnapshots 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
           { name: 'VulnerabilitySeverityLevel', type: 'string' }
         ]
       }
+      'Custom-DefenderDeviceSoftware_CL': {
+        columns: [
+          { name: 'TimeGenerated', type: 'datetime' }
+          { name: 'DeviceId', type: 'string' }
+          { name: 'AadDeviceId', type: 'string' }
+          { name: 'DeviceName', type: 'string' }
+          { name: 'SoftwareId', type: 'string' }
+          { name: 'SoftwareName', type: 'string' }
+          { name: 'SoftwareVendor', type: 'string' }
+          { name: 'SoftwareVersion', type: 'string' }
+        ]
+      }
     }
     destinations: {
       logAnalytics: [
@@ -247,6 +259,12 @@ resource dcrWeeklySnapshots 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
         destinations: [ 'defender-dashboard-workspace' ]
         transformKql: 'source | extend TimeGenerated = now()'
         outputStream: 'Custom-DefenderVulnDelta_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderDeviceSoftware_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderDeviceSoftware_CL'
       }
     ]
   }

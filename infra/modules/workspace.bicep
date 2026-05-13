@@ -279,6 +279,31 @@ resource tableVulnDelta 'Microsoft.OperationalInsights/workspaces/tables@2022-10
 }
 
 // ============================================================
+// Koppeltabel — Device ↔ Software relatie
+// ============================================================
+resource tableDeviceSoftware 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'DefenderDeviceSoftware_CL'
+  properties: {
+    plan: 'Basic'
+    totalRetentionInDays: 730
+    schema: {
+      name: 'DefenderDeviceSoftware_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'DeviceId', type: 'string' }        // MDE device ID — join met DeviceInventory
+        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — join met Intune
+        { name: 'DeviceName', type: 'string' }
+        { name: 'SoftwareId', type: 'string' }      // Join met SoftwareInventory
+        { name: 'SoftwareName', type: 'string' }
+        { name: 'SoftwareVendor', type: 'string' }
+        { name: 'SoftwareVersion', type: 'string' }
+      ]
+    }
+  }
+}
+
+// ============================================================
 // Intune Tabellen — Basic Plan
 // ============================================================
 resource tableIntuneDevices 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
