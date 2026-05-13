@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "12885454016371299896"
+      "templateHash": "5994414468227678051"
     }
   },
   "parameters": {
@@ -197,7 +197,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "1238930142838929725"
+              "templateHash": "5680698160909918889"
             }
           },
           "parameters": {
@@ -510,6 +510,10 @@
                       "type": "string"
                     },
                     {
+                      "name": "OsBuild",
+                      "type": "string"
+                    },
+                    {
                       "name": "RiskScore",
                       "type": "string"
                     },
@@ -528,6 +532,30 @@
                     {
                       "name": "LastSeen",
                       "type": "datetime"
+                    },
+                    {
+                      "name": "FirstSeen",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "LastLoggedOnUser",
+                      "type": "string"
+                    },
+                    {
+                      "name": "LastIpAddress",
+                      "type": "string"
+                    },
+                    {
+                      "name": "LastExternalIpAddress",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AgentVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "RbacGroupName",
+                      "type": "string"
                     }
                   ]
                 }
@@ -710,6 +738,26 @@
                     {
                       "name": "UserPrincipalName",
                       "type": "string"
+                    },
+                    {
+                      "name": "UserDisplayName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "IsEncrypted",
+                      "type": "boolean"
+                    },
+                    {
+                      "name": "Model",
+                      "type": "string"
+                    },
+                    {
+                      "name": "Manufacturer",
+                      "type": "string"
+                    },
+                    {
+                      "name": "EnrolledDateTime",
+                      "type": "datetime"
                     }
                   ]
                 }
@@ -1216,7 +1264,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "6046651705835182360"
+              "templateHash": "5248883208854536994"
             }
           },
           "parameters": {
@@ -1687,6 +1735,10 @@
                         "type": "string"
                       },
                       {
+                        "name": "OsBuild",
+                        "type": "string"
+                      },
+                      {
                         "name": "RiskScore",
                         "type": "string"
                       },
@@ -1705,6 +1757,30 @@
                       {
                         "name": "LastSeen",
                         "type": "datetime"
+                      },
+                      {
+                        "name": "FirstSeen",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "LastLoggedOnUser",
+                        "type": "string"
+                      },
+                      {
+                        "name": "LastIpAddress",
+                        "type": "string"
+                      },
+                      {
+                        "name": "LastExternalIpAddress",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AgentVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "RbacGroupName",
+                        "type": "string"
                       }
                     ]
                   },
@@ -2042,6 +2118,26 @@
                       {
                         "name": "UserPrincipalName",
                         "type": "string"
+                      },
+                      {
+                        "name": "UserDisplayName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "IsEncrypted",
+                        "type": "boolean"
+                      },
+                      {
+                        "name": "Model",
+                        "type": "string"
+                      },
+                      {
+                        "name": "Manufacturer",
+                        "type": "string"
+                      },
+                      {
+                        "name": "EnrolledDateTime",
+                        "type": "datetime"
                       }
                     ]
                   },

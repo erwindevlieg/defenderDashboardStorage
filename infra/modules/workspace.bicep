@@ -182,11 +182,18 @@ resource tableDeviceInventory 'Microsoft.OperationalInsights/workspaces/tables@2
         { name: 'DeviceName', type: 'string' }
         { name: 'OsPlatform', type: 'string' }
         { name: 'OsVersion', type: 'string' }
+        { name: 'OsBuild', type: 'string' }
         { name: 'RiskScore', type: 'string' }
         { name: 'ExposureLevel', type: 'string' }
         { name: 'HealthStatus', type: 'string' }
         { name: 'OnboardingStatus', type: 'string' }
         { name: 'LastSeen', type: 'datetime' }
+        { name: 'FirstSeen', type: 'datetime' }
+        { name: 'LastLoggedOnUser', type: 'string' }
+        { name: 'LastIpAddress', type: 'string' }
+        { name: 'LastExternalIpAddress', type: 'string' }
+        { name: 'AgentVersion', type: 'string' }
+        { name: 'RbacGroupName', type: 'string' }
       ]
     }
   }
@@ -267,6 +274,11 @@ resource tableIntuneDevices 'Microsoft.OperationalInsights/workspaces/tables@202
         { name: 'LastSyncDateTime', type: 'datetime' }
         { name: 'ManagementAgent', type: 'string' }
         { name: 'UserPrincipalName', type: 'string' }
+        { name: 'UserDisplayName', type: 'string' }
+        { name: 'IsEncrypted', type: 'boolean' }
+        { name: 'Model', type: 'string' }
+        { name: 'Manufacturer', type: 'string' }
+        { name: 'EnrolledDateTime', type: 'datetime' }
       ]
     }
   }
