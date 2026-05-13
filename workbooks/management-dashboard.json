@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workbookName": {
+      "type": "string",
+      "defaultValue": "Defender Dashboard — Management",
+      "metadata": { "description": "Naam van de workbook" }
+    },
+    "workspaceResourceId": {
+      "type": "string",
+      "metadata": { "description": "Resource ID van de Log Analytics workspace" }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/workbooks",
+      "apiVersion": "2023-06-01",
+      "name": "[guid('management-dashboard', resourceGroup().id)]",
+      "location": "[resourceGroup().location]",
+      "kind": "shared",
+      "properties": {
+        "displayName": "[parameters('workbookName')]",
+        "category": "workbook",
+        "sourceId": "[parameters('workspaceResourceId')]",
+        "serializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"# Defender Dashboard — Management\\n\\nOverzicht van security KPIs en trends.\"},\"name\":\"header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderExposureScore_CL\\n| summarize Score=avg(ExposureScore) by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Exposure Score Trend\",\"timeContext\":{\"durationMs\":2592000000},\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\",\"chartSettings\":{\"yAxis\":[\"Score\"],\"ySettings\":{\"min\":0,\"max\":100}}},\"name\":\"exposureScoreTrend\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderSecureScore_CL\\n| summarize Score=avg(CurrentScore), MaxScore=avg(MaxScore) by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Secure Score Trend\",\"timeContext\":{\"durationMs\":2592000000},\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\"},\"name\":\"secureScoreTrend\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderConfigurationScore_CL\\n| summarize Score=avg(ConfigurationScore) by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Configuration Score Trend\",\"timeContext\":{\"durationMs\":2592000000},\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\"},\"name\":\"configScoreTrend\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderAlertAggregates_CL\\n| summarize AvgMTTR=avg(MTTR_Hours), AvgMTTD=avg(MTTD_Hours) by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"MTTR / MTTD Trend (uren)\",\"timeContext\":{\"durationMs\":2592000000},\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\"},\"name\":\"mttrMttdTrend\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderAlertAggregates_CL\\n| top 1 by TimeGenerated\\n| project TotalAlerts, HighSeverity, MediumSeverity, LowSeverity\",\"size\":4,\"title\":\"Laatste Alert Verdeling\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\",\"tileSettings\":{\"titleContent\":{\"columnMatch\":\"Column1\"},\"showBorder\":true}},\"name\":\"alertSummary\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderRecommendations_CL\\n| where TimeGenerated > ago(1d)\\n| summarize Count=count() by Severity\\n| order by Count desc\",\"size\":0,\"title\":\"Open Recommendations per Severity\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"recommendationsBySeverity\"}],\"fallbackResourceIds\":[\"\"]}",
+        "version": "1.0"
+      }
+    }
+  ]
+}

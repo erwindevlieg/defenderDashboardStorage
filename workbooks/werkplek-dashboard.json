@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workbookName": {
+      "type": "string",
+      "defaultValue": "Defender Dashboard — Werkplek",
+      "metadata": { "description": "Naam van de workbook" }
+    },
+    "workspaceResourceId": {
+      "type": "string",
+      "metadata": { "description": "Resource ID van de Log Analytics workspace" }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/workbooks",
+      "apiVersion": "2023-06-01",
+      "name": "[guid('werkplek-dashboard', resourceGroup().id)]",
+      "location": "[resourceGroup().location]",
+      "kind": "shared",
+      "properties": {
+        "displayName": "[parameters('workbookName')]",
+        "category": "workbook",
+        "sourceId": "[parameters('workspaceResourceId')]",
+        "serializedData": "{\"version\":\"Notebook/1.0\",\"items\":[{\"type\":1,\"content\":{\"json\":\"# Defender Dashboard — Werkplek Team\\n\\nOperationeel overzicht van devices, software en compliance.\"},\"name\":\"header\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderDeviceInventory_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| summarize Count=count() by RiskScore\\n| order by Count desc\",\"size\":0,\"title\":\"Devices per Risk Score\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"devicesByRisk\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderDeviceInventory_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| summarize Count=count() by HealthStatus\\n| order by Count desc\",\"size\":0,\"title\":\"Devices per Health Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"devicesByHealth\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderDeviceInventory_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| summarize Count=count() by OsPlatform\\n| order by Count desc\",\"size\":0,\"title\":\"Devices per OS Platform\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\"},\"name\":\"devicesByOS\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderAVHealth_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| extend SignatureAge = datetime_diff('day', now(), AVSignatureUpdateTime)\\n| summarize Outdated=countif(SignatureAge > 7), Current=countif(SignatureAge <= 7)\",\"size\":4,\"title\":\"AV Signature Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"tiles\"},\"name\":\"avHealth\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"IntuneDevices_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId\\n| summarize Count=count() by ComplianceState\\n| order by Count desc\",\"size\":0,\"title\":\"Intune Compliance Status\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"piechart\"},\"name\":\"intuneCompliance\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderSoftwareInventory_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by SoftwareId\\n| where NumberOfWeaknesses > 0\\n| top 20 by NumberOfWeaknesses desc\\n| project SoftwareName, SoftwareVendor, NumberOfWeaknesses, NumberOfDevices, EndOfSupportStatus\",\"size\":0,\"title\":\"Top 20 Software met Kwetsbaarheden\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"table\"},\"name\":\"topVulnSoftware\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderSecureConfig_CL\\n| where TimeGenerated > ago(7d)\\n| summarize arg_max(TimeGenerated, *) by DeviceId, ConfigurationId\\n| where IsApplicable == true\\n| summarize Compliant=countif(IsCompliant == true), NonCompliant=countif(IsCompliant == false) by ConfigurationCategory\",\"size\":0,\"title\":\"Configuration Compliance per Categorie\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"barchart\",\"chartSettings\":{\"seriesLabelSettings\":[{\"seriesName\":\"Compliant\",\"color\":\"green\"},{\"seriesName\":\"NonCompliant\",\"color\":\"red\"}]}},\"name\":\"configCompliance\"},{\"type\":3,\"content\":{\"version\":\"KqlItem/1.0\",\"query\":\"DefenderVulnDelta_CL\\n| where TimeGenerated > ago(30d)\\n| summarize NewVulns=countif(EventType == 'New'), FixedVulns=countif(EventType == 'Fixed') by bin(TimeGenerated, 1d)\\n| order by TimeGenerated asc\",\"size\":0,\"title\":\"Vulnerability Delta Trend (30 dagen)\",\"queryType\":0,\"resourceType\":\"microsoft.operationalinsights/workspaces\",\"visualization\":\"linechart\"},\"name\":\"vulnDeltaTrend\"}],\"fallbackResourceIds\":[\"\"]}",
+        "version": "1.0"
+      }
+    }
+  ]
+}
