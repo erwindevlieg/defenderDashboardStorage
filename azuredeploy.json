@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "12055220055517445841"
+      "templateHash": "3919069830905807412"
     }
   },
   "parameters": {
@@ -60,6 +60,20 @@
       "defaultValue": "",
       "metadata": {
         "description": "Resource ID van de UAMI die app role assignments mag uitvoeren (bootstrap UAMI)"
+      }
+    },
+    "repoUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "GitHub repository URL voor automatische Function App code-deployment"
+      }
+    },
+    "repoBranch": {
+      "type": "string",
+      "defaultValue": "main",
+      "metadata": {
+        "description": "Branch voor code-deployment"
       }
     }
   },
@@ -2260,6 +2274,12 @@
           },
           "appConfigEndpoint": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-app-config'), '2025-04-01').outputs.appConfigEndpoint.value]"
+          },
+          "repoUrl": {
+            "value": "[parameters('repoUrl')]"
+          },
+          "repoBranch": {
+            "value": "[parameters('repoBranch')]"
           }
         },
         "template": {
@@ -2269,7 +2289,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "5109632250440246884"
+              "templateHash": "11764548913853617280"
             }
           },
           "parameters": {
@@ -2340,6 +2360,20 @@
               "defaultValue": "",
               "metadata": {
                 "description": "App Configuration Endpoint"
+              }
+            },
+            "repoUrl": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "GitHub repository URL voor automatische code-deployment (bijv. https://github.com/user/repo)"
+              }
+            },
+            "repoBranch": {
+              "type": "string",
+              "defaultValue": "main",
+              "metadata": {
+                "description": "Branch voor code-deployment"
               }
             }
           },
@@ -2480,6 +2514,20 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Storage/storageAccounts', format('stdefenderdash{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "condition": "[not(empty(parameters('repoUrl')))]",
+              "type": "Microsoft.Web/sites/sourcecontrols",
+              "apiVersion": "2024-04-01",
+              "name": "[format('{0}/{1}', format('func-defender-dashboard-{0}', parameters('resourceToken')), 'web')]",
+              "properties": {
+                "repoUrl": "[parameters('repoUrl')]",
+                "branch": "[parameters('repoBranch')]",
+                "isManualIntegration": true
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', format('func-defender-dashboard-{0}', parameters('resourceToken')))]"
               ]
             }
           ],

@@ -35,6 +35,12 @@ param dcrIntuneImmutableId string
 @description('App Configuration Endpoint')
 param appConfigEndpoint string = ''
 
+@description('GitHub repository URL voor automatische code-deployment (bijv. https://github.com/user/repo)')
+param repoUrl string = ''
+
+@description('Branch voor code-deployment')
+param repoBranch string = 'main'
+
 // ============================================================
 // Storage Account (voor Function App runtime)
 // ============================================================
@@ -132,6 +138,19 @@ resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataOwnerRoleId)
     principalId: reference(identityId, '2023-01-31').principalId
     principalType: 'ServicePrincipal'
+  }
+}
+
+// ============================================================
+// Source Control — automatische code-deployment vanuit GitHub
+// ============================================================
+resource sourceControl 'Microsoft.Web/sites/sourcecontrols@2024-04-01' = if (!empty(repoUrl)) {
+  parent: functionApp
+  name: 'web'
+  properties: {
+    repoUrl: repoUrl
+    branch: repoBranch
+    isManualIntegration: true // geen webhook, handmatig sync
   }
 }
 

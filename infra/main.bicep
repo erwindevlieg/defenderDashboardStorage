@@ -32,6 +32,13 @@ param securityGroupObjectId string = ''
 @description('Resource ID van de UAMI die app role assignments mag uitvoeren (bootstrap UAMI)')
 param scriptRunnerIdentityId string = ''
 
+// --- Source Control ---
+@description('GitHub repository URL voor automatische Function App code-deployment')
+param repoUrl string = ''
+
+@description('Branch voor code-deployment')
+param repoBranch string = 'main'
+
 // ============================================================
 // Module: Managed Identity
 // ============================================================
@@ -112,6 +119,8 @@ module functionApp 'modules/function-app.bicep' = {
     dcrWeeklySnapshotsImmutableId: dcr.outputs.dcrWeeklySnapshotsImmutableId
     dcrIntuneImmutableId: dcr.outputs.dcrIntuneImmutableId
     appConfigEndpoint: appConfig.outputs.appConfigEndpoint
+    repoUrl: repoUrl
+    repoBranch: repoBranch
   }
 }
 

@@ -26,6 +26,8 @@ Platform voor het opslaan van historische data uit Microsoft Defender XDR en Int
 |---|---|---|
 | `resourceToken` | Uniek token voor resource namen (3-10 tekens, bijv. `prod01`) | ✅ |
 | `location` | Azure regio (default: resource group locatie) | |
+| `repoUrl` | GitHub repo URL — vult automatisch Function App code in | |
+| `repoBranch` | Branch voor code-deployment (default: `main`) | |
 | `managementGroupObjectId` | Object ID van de management security group | |
 | `werkplekGroupObjectId` | Object ID van de werkplek security group | |
 | `securityGroupObjectId` | Object ID van de security security group | |
@@ -33,7 +35,11 @@ Platform voor het opslaan van historische data uit Microsoft Defender XDR en Int
 
 ## Na deployment
 
-### 1. Function App code deployen
+### 1. Function App code
+
+Als je bij deployment de `repoUrl` parameter hebt ingevuld, wordt de code automatisch uit GitHub gepulled. Je hoeft dan niets extra's te doen.
+
+**Zonder repoUrl?** Deploy handmatig:
 
 ```bash
 cd function-app
