@@ -95,6 +95,31 @@ resource tableSecureScore 'Microsoft.OperationalInsights/workspaces/tables@2022-
   }
 }
 
+// SecureScoreControls: Analytics — welke controls bijdragen aan de Secure Score
+resource tableSecureScoreControls 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'DefenderSecureScoreControls_CL'
+  properties: {
+    plan: 'Analytics'
+    retentionInDays: 365
+    totalRetentionInDays: 1826
+    schema: {
+      name: 'DefenderSecureScoreControls_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'ControlId', type: 'string' }
+        { name: 'Title', type: 'string' }
+        { name: 'ControlCategory', type: 'string' }
+        { name: 'ActionType', type: 'string' }
+        { name: 'MaxScore', type: 'real' }
+        { name: 'CurrentScore', type: 'real' }
+        { name: 'ImplementationStatus', type: 'string' }
+        { name: 'LastModifiedDateTime', type: 'datetime' }
+      ]
+    }
+  }
+}
+
 resource tableConfigScore 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderConfigurationScore_CL'

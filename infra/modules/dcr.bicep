@@ -52,6 +52,19 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
           { name: 'AverageComparativeScore', type: 'real' }
         ]
       }
+      'Custom-DefenderSecureScoreControls_CL': {
+        columns: [
+          { name: 'TimeGenerated', type: 'datetime' }
+          { name: 'ControlId', type: 'string' }
+          { name: 'Title', type: 'string' }
+          { name: 'ControlCategory', type: 'string' }
+          { name: 'ActionType', type: 'string' }
+          { name: 'MaxScore', type: 'real' }
+          { name: 'CurrentScore', type: 'real' }
+          { name: 'ImplementationStatus', type: 'string' }
+          { name: 'LastModifiedDateTime', type: 'datetime' }
+        ]
+      }
       'Custom-DefenderConfigurationScore_CL': {
         columns: [
           { name: 'TimeGenerated', type: 'datetime' }
@@ -155,6 +168,12 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
         destinations: [ 'defender-dashboard-workspace' ]
         transformKql: 'source | extend TimeGenerated = now()'
         outputStream: 'Custom-DefenderSecureScore_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderSecureScoreControls_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderSecureScoreControls_CL'
       }
       {
         streams: [ 'Custom-DefenderConfigurationScore_CL' ]

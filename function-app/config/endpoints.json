@@ -46,6 +46,15 @@
       "transform": "graphList"
     },
     {
+      "key": "secureScoreControls",
+      "url": "https://graph.microsoft.com/v1.0/security/secureScoreControlProfiles?$select=id,azureTenantId,controlCategory,actionType,title,maxScore,currentScore,implementationStatus,lastModifiedDateTime,controlStateUpdates",
+      "method": "GET",
+      "scope": "https://graph.microsoft.com/.default",
+      "stream": "Custom-DefenderSecureScoreControls_CL",
+      "dcr": "daily",
+      "transform": "graphList"
+    },
+    {
       "key": "vulnDelta",
       "url": "https://api.securitycenter.microsoft.com/api/machines/SoftwareVulnerabilityChangesByMachine",
       "method": "GET",
