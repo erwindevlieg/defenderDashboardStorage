@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "2779811873853599935"
+      "templateHash": "6500053214206390437"
     }
   },
   "parameters": {
@@ -1318,7 +1318,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "135337913282755450"
+              "templateHash": "4368343783234419726"
             }
           },
           "parameters": {
@@ -1686,6 +1686,118 @@
                         "type": "int"
                       }
                     ]
+                  },
+                  "Custom-DefenderDeviceInventory_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "DeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AadDeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DeviceName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OsPlatform",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OsVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OsBuild",
+                        "type": "string"
+                      },
+                      {
+                        "name": "RiskScore",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ExposureLevel",
+                        "type": "string"
+                      },
+                      {
+                        "name": "HealthStatus",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OnboardingStatus",
+                        "type": "string"
+                      },
+                      {
+                        "name": "LastSeen",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "FirstSeen",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "LastLoggedOnUser",
+                        "type": "string"
+                      },
+                      {
+                        "name": "LastIpAddress",
+                        "type": "string"
+                      },
+                      {
+                        "name": "LastExternalIpAddress",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AgentVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "RbacGroupName",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "Custom-IntuneComplianceReports_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "PolicyName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "PolicyId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "CompliantDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "NonCompliantDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "ErrorDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "NotApplicableDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "Platform",
+                        "type": "string"
+                      }
+                    ]
                   }
                 },
                 "destinations": {
@@ -1796,6 +1908,26 @@
                     ],
                     "transformKql": "source | extend TimeGenerated = now()",
                     "outputStream": "Custom-DefenderAVDetections_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderDeviceInventory_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderDeviceInventory_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-IntuneComplianceReports_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-IntuneComplianceReports_CL"
                   }
                 ]
               },
@@ -3299,7 +3431,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "11547152509544238511"
+              "templateHash": "18270683580701379086"
             }
           },
           "parameters": {
@@ -3338,7 +3470,7 @@
             }
           },
           "variables": {
-            "$fxv#0": "<#\r\n.SYNOPSIS\r\n    Wijst Defender XDR en Microsoft Graph app roles toe aan een Managed Identity.\r\n.DESCRIPTION\r\n    Dit script wordt uitgevoerd via een Bicep deploymentScript.\r\n    De identity die dit script uitvoert moet AppRoleAssignment.ReadWrite.All hebben.\r\n.PARAMETER ManagedIdentityPrincipalId\r\n    Object ID van de Managed Identity waaraan de app roles worden toegewezen.\r\n#>\r\nparam(\r\n    [Parameter(Mandatory = $true)]\r\n    [string]$ManagedIdentityPrincipalId\r\n)\r\n\r\n$ErrorActionPreference = 'Stop'\r\n\r\n# Well-known Service Principal App IDs\r\n$defenderAppId = 'fc780465-2017-40d4-a0c5-307022471b92'  # WindowsDefenderATP\r\n$graphAppId = '00000003-0000-0000-c000-000000000000'      # Microsoft Graph\r\n\r\n# WindowsDefenderATP App Roles (alleen wat daadwerkelijk wordt gebruikt)\r\n$defenderRoles = @{\r\n    'Score.Read.All'                  = '02b005dd-4237-4e38-b59f-fdb03dbb7e58'\r\n    'Machine.Read.All'                = 'ea8291d3-4b9a-44b5-bc3a-6cea3026dc79'\r\n    'Vulnerability.Read.All'          = '41269fc5-d04d-4bfd-bce7-43a51cea049a'\r\n    'Alert.Read.All'                  = '71fe6b80-efef-4ac2-a530-00d4755b6c67'\r\n    'SecurityRecommendation.Read.All' = '6443965c-7440-4abb-830f-f2f7be535ea0'\r\n    'Software.Read.All'               = '37f71c98-d198-41ae-964d-d4e3dddea1e3'\r\n    'AdvancedQuery.Read.All'          = '93489bf5-0fbc-4f2d-b901-33f2fe08ff05'\r\n}\r\n\r\n# Microsoft Graph App Roles (alleen wat daadwerkelijk wordt gebruikt)\r\n$graphRoles = @{\r\n    'SecurityEvents.Read.All'                        = 'bf394140-e372-4bf9-a898-299cfc7564e5'\r\n    'DeviceManagementManagedDevices.Read.All'         = '2f51be20-0bb4-4fed-bf7b-db946066c75e'\r\n    'DeviceManagementConfiguration.Read.All'          = 'dc377aa6-52d8-4e23-b271-b4ee8372acee'\r\n    'DeviceManagementApps.Read.All'                  = '7a6ee1e7-141e-4cec-ae74-d9db155731ff'\r\n}\r\n\r\nfunction Assign-AppRole {\r\n    param(\r\n        [string]$ServicePrincipalAppId,\r\n        [string]$AppRoleId,\r\n        [string]$AppRoleName,\r\n        [string]$PrincipalId\r\n    )\r\n\r\n    # Zoek de service principal op basis van appId\r\n    $sp = Get-MgServicePrincipal -Filter \"appId eq '$ServicePrincipalAppId'\" -Top 1\r\n\r\n    if (-not $sp) {\r\n        Write-Warning \"Service Principal met appId '$ServicePrincipalAppId' niet gevonden. Sla over.\"\r\n        return\r\n    }\r\n\r\n    # Controleer of de toewijzing al bestaat\r\n    $existing = Get-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $sp.Id |\r\n        Where-Object { $_.AppRoleId -eq $AppRoleId -and $_.PrincipalId -eq $PrincipalId }\r\n\r\n    if ($existing) {\r\n        Write-Output \"[OK] App role '$AppRoleName' is al toegewezen.\"\r\n        return\r\n    }\r\n\r\n    # Wijs de app role toe\r\n    $params = @{\r\n        PrincipalId = $PrincipalId\r\n        ResourceId  = $sp.Id\r\n        AppRoleId   = $AppRoleId\r\n    }\r\n\r\n    New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $PrincipalId -BodyParameter $params\r\n    Write-Output \"[OK] App role '$AppRoleName' succesvol toegewezen.\"\r\n}\r\n\r\n# Installeer Microsoft.Graph module als nodig\r\nif (-not (Get-Module -ListAvailable -Name Microsoft.Graph.Applications)) {\r\n    Install-Module Microsoft.Graph.Applications -Force -Scope CurrentUser -AllowClobber\r\n}\r\n\r\nImport-Module Microsoft.Graph.Applications\r\n\r\n# Connect via Managed Identity\r\nConnect-MgGraph -Identity\r\n\r\nWrite-Output \"=== WindowsDefenderATP App Roles ===\"\r\nforeach ($role in $defenderRoles.GetEnumerator()) {\r\n    Assign-AppRole -ServicePrincipalAppId $defenderAppId `\r\n                   -AppRoleId $role.Value `\r\n                   -AppRoleName $role.Key `\r\n                   -PrincipalId $ManagedIdentityPrincipalId\r\n}\r\n\r\nWrite-Output \"\"\r\nWrite-Output \"=== Microsoft Graph App Roles ===\"\r\nforeach ($role in $graphRoles.GetEnumerator()) {\r\n    Assign-AppRole -ServicePrincipalAppId $graphAppId `\r\n                   -AppRoleId $role.Value `\r\n                   -AppRoleName $role.Key `\r\n                   -PrincipalId $ManagedIdentityPrincipalId\r\n}\r\n\r\nWrite-Output \"\"\r\nWrite-Output \"Alle app role assignments voltooid.\"\r\n$DeploymentScriptOutputs = @{ status = 'success' }\r\n"
+            "$fxv#0": "<#\n.SYNOPSIS\n    Wijst Defender XDR en Microsoft Graph app roles toe aan een Managed Identity.\n.DESCRIPTION\n    Dit script wordt uitgevoerd via een Bicep deploymentScript.\n    De identity die dit script uitvoert moet AppRoleAssignment.ReadWrite.All hebben.\n.PARAMETER ManagedIdentityPrincipalId\n    Object ID van de Managed Identity waaraan de app roles worden toegewezen.\n#>\nparam(\n    [Parameter(Mandatory = $true)]\n    [string]$ManagedIdentityPrincipalId\n)\n\n$ErrorActionPreference = 'Stop'\n\n# Well-known Service Principal App IDs\n$defenderAppId = 'fc780465-2017-40d4-a0c5-307022471b92'  # WindowsDefenderATP\n$graphAppId = '00000003-0000-0000-c000-000000000000'      # Microsoft Graph\n\n# WindowsDefenderATP App Roles (alleen wat daadwerkelijk wordt gebruikt)\n$defenderRoles = @{\n    'Score.Read.All'                  = '02b005dd-4237-4e38-b59f-fdb03dbb7e58'\n    'Machine.Read.All'                = 'ea8291d3-4b9a-44b5-bc3a-6cea3026dc79'\n    'Vulnerability.Read.All'          = '41269fc5-d04d-4bfd-bce7-43a51cea049a'\n    'Alert.Read.All'                  = '71fe6b80-efef-4ac2-a530-00d4755b6c67'\n    'SecurityRecommendation.Read.All' = '6443965c-7440-4abb-830f-f2f7be535ea0'\n    'Software.Read.All'               = '37f71c98-d198-41ae-964d-d4e3dddea1e3'\n    'AdvancedQuery.Read.All'          = '93489bf5-0fbc-4f2d-b901-33f2fe08ff05'\n}\n\n# Microsoft Graph App Roles (alleen wat daadwerkelijk wordt gebruikt)\n$graphRoles = @{\n    'SecurityEvents.Read.All'                        = 'bf394140-e372-4bf9-a898-299cfc7564e5'\n    'DeviceManagementManagedDevices.Read.All'         = '2f51be20-0bb4-4fed-bf7b-db946066c75e'\n    'DeviceManagementConfiguration.Read.All'          = 'dc377aa6-52d8-4e23-b271-b4ee8372acee'\n    'DeviceManagementApps.Read.All'                  = '7a6ee1e7-141e-4cec-ae74-d9db155731ff'\n}\n\nfunction Assign-AppRole {\n    param(\n        [string]$ServicePrincipalAppId,\n        [string]$AppRoleId,\n        [string]$AppRoleName,\n        [string]$PrincipalId\n    )\n\n    # Zoek de service principal op basis van appId\n    $sp = Get-MgServicePrincipal -Filter \"appId eq '$ServicePrincipalAppId'\" -Top 1\n\n    if (-not $sp) {\n        Write-Warning \"Service Principal met appId '$ServicePrincipalAppId' niet gevonden. Sla over.\"\n        return\n    }\n\n    # Controleer of de toewijzing al bestaat\n    $existing = Get-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $sp.Id |\n        Where-Object { $_.AppRoleId -eq $AppRoleId -and $_.PrincipalId -eq $PrincipalId }\n\n    if ($existing) {\n        Write-Output \"[OK] App role '$AppRoleName' is al toegewezen.\"\n        return\n    }\n\n    # Wijs de app role toe\n    $params = @{\n        PrincipalId = $PrincipalId\n        ResourceId  = $sp.Id\n        AppRoleId   = $AppRoleId\n    }\n\n    New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $PrincipalId -BodyParameter $params\n    Write-Output \"[OK] App role '$AppRoleName' succesvol toegewezen.\"\n}\n\n# Installeer Microsoft.Graph module als nodig\nif (-not (Get-Module -ListAvailable -Name Microsoft.Graph.Applications)) {\n    Install-Module Microsoft.Graph.Applications -Force -Scope CurrentUser -AllowClobber\n}\n\nImport-Module Microsoft.Graph.Applications\n\n# Connect via Managed Identity\nConnect-MgGraph -Identity\n\nWrite-Output \"=== WindowsDefenderATP App Roles ===\"\nforeach ($role in $defenderRoles.GetEnumerator()) {\n    Assign-AppRole -ServicePrincipalAppId $defenderAppId `\n                   -AppRoleId $role.Value `\n                   -AppRoleName $role.Key `\n                   -PrincipalId $ManagedIdentityPrincipalId\n}\n\nWrite-Output \"\"\nWrite-Output \"=== Microsoft Graph App Roles ===\"\nforeach ($role in $graphRoles.GetEnumerator()) {\n    Assign-AppRole -ServicePrincipalAppId $graphAppId `\n                   -AppRoleId $role.Value `\n                   -AppRoleName $role.Key `\n                   -PrincipalId $ManagedIdentityPrincipalId\n}\n\nWrite-Output \"\"\nWrite-Output \"Alle app role assignments voltooid.\"\n$DeploymentScriptOutputs = @{ status = 'success' }\n"
           },
           "resources": [
             {

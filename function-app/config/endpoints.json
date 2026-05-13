@@ -98,6 +98,24 @@
       "dcr": "daily",
       "transform": "advancedHunting",
       "query": "DeviceEvents | where Timestamp > ago(1d) | where ActionType in ('AntivirusDetection', 'AntivirusEmergencyUpdate') | extend ThreatName = tostring(parse_json(AdditionalFields).ThreatName) | extend WasRemediated = tostring(parse_json(AdditionalFields).WasRemediated) | extend DetectionSource = tostring(parse_json(AdditionalFields).Source) | where ActionType == 'AntivirusDetection' | summarize DetectionCount=count(), UniqueDevices=dcount(DeviceId), RemediatedCount=countif(WasRemediated == 'true') by ThreatName, DetectionSource | project ThreatName, DetectionSource, DetectionCount, UniqueDevices, RemediatedCount"
+    },
+    {
+      "key": "deviceInventory",
+      "url": "https://api.securitycenter.microsoft.com/api/machines",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderDeviceInventory_CL",
+      "dcr": "daily",
+      "transform": "list"
+    },
+    {
+      "key": "intuneCompliance",
+      "url": "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicySettingStateSummaries",
+      "method": "GET",
+      "scope": "https://graph.microsoft.com/.default",
+      "stream": "Custom-IntuneComplianceReports_CL",
+      "dcr": "daily",
+      "transform": "graphList"
     }
   ],
   "weekly": [
@@ -109,15 +127,6 @@
       "stream": "Custom-DefenderAVHealth_CL",
       "dcr": "weekly",
       "transform": "exportList"
-    },
-    {
-      "key": "deviceInventory",
-      "url": "https://api.securitycenter.microsoft.com/api/machines",
-      "method": "GET",
-      "scope": "https://api.securitycenter.microsoft.com/.default",
-      "stream": "Custom-DefenderDeviceInventory_CL",
-      "dcr": "weekly",
-      "transform": "list"
     },
     {
       "key": "deviceSoftware",
@@ -145,15 +154,6 @@
       "stream": "Custom-DefenderSoftwareInventory_CL",
       "dcr": "weekly",
       "transform": "list"
-    },
-    {
-      "key": "intuneCompliance",
-      "url": "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicySettingStateSummaries",
-      "method": "GET",
-      "scope": "https://graph.microsoft.com/.default",
-      "stream": "Custom-IntuneComplianceReports_CL",
-      "dcr": "intune",
-      "transform": "graphList"
     },
     {
       "key": "intuneDetectedApps",

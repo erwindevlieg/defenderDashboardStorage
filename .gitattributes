@@ -1,2 +1,6 @@
 # Force consistent line endings for generated ARM template
 azuredeploy.json text eol=lf
+
+# Force LF for PowerShell scripts — Bicep embeds PS1 content in ARM JSON
+# Windows \r\n vs Linux \n causes diff failures in CI
+*.ps1 text eol=lf

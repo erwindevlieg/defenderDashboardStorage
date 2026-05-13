@@ -147,6 +147,40 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
           { name: 'RemediatedCount', type: 'int' }
         ]
       }
+      'Custom-DefenderDeviceInventory_CL': {
+        columns: [
+          { name: 'TimeGenerated', type: 'datetime' }
+          { name: 'DeviceId', type: 'string' }
+          { name: 'AadDeviceId', type: 'string' }
+          { name: 'DeviceName', type: 'string' }
+          { name: 'OsPlatform', type: 'string' }
+          { name: 'OsVersion', type: 'string' }
+          { name: 'OsBuild', type: 'string' }
+          { name: 'RiskScore', type: 'string' }
+          { name: 'ExposureLevel', type: 'string' }
+          { name: 'HealthStatus', type: 'string' }
+          { name: 'OnboardingStatus', type: 'string' }
+          { name: 'LastSeen', type: 'datetime' }
+          { name: 'FirstSeen', type: 'datetime' }
+          { name: 'LastLoggedOnUser', type: 'string' }
+          { name: 'LastIpAddress', type: 'string' }
+          { name: 'LastExternalIpAddress', type: 'string' }
+          { name: 'AgentVersion', type: 'string' }
+          { name: 'RbacGroupName', type: 'string' }
+        ]
+      }
+      'Custom-IntuneComplianceReports_CL': {
+        columns: [
+          { name: 'TimeGenerated', type: 'datetime' }
+          { name: 'PolicyName', type: 'string' }
+          { name: 'PolicyId', type: 'string' }
+          { name: 'CompliantDevices', type: 'int' }
+          { name: 'NonCompliantDevices', type: 'int' }
+          { name: 'ErrorDevices', type: 'int' }
+          { name: 'NotApplicableDevices', type: 'int' }
+          { name: 'Platform', type: 'string' }
+        ]
+      }
     }
     destinations: {
       logAnalytics: [
@@ -216,6 +250,18 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
         destinations: [ 'defender-dashboard-workspace' ]
         transformKql: 'source | extend TimeGenerated = now()'
         outputStream: 'Custom-DefenderAVDetections_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderDeviceInventory_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderDeviceInventory_CL'
+      }
+      {
+        streams: [ 'Custom-IntuneComplianceReports_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-IntuneComplianceReports_CL'
       }
     ]
   }
