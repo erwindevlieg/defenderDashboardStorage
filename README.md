@@ -18,7 +18,7 @@ Maak eerst een resource group aan (bijv. `rg-defender-dashboard` in `West Europe
 | `location` | Azure regio — standaard de locatie van je resource group | |
 | `repoUrl` | URL van je fork/clone, bijv. `https://github.com/jouw-user/defenderDashboardStorage` — dan wordt de Python code automatisch gedeployed | |
 | `repoBranch` | Branch voor code-deployment — standaard `main` | |
-| `scriptRunnerIdentityId` | Resource ID van een UAMI met `AppRoleAssignment.ReadWrite.All` — dan worden API-permissies automatisch toegewezen | |
+| `scriptRunnerIdentityId` | Resource ID van een bestaande User-Assigned Managed Identity met `AppRoleAssignment.ReadWrite.All`. Formaat: `/subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{naam}`. Als ingevuld worden API-permissies automatisch toegewezen. Laat leeg voor handmatige toewijzing (zie `docs/bootstrap.md`). | |
 
 ---
 
@@ -88,8 +88,8 @@ Het script wijst deze permissies toe:
 
 | API | Permissies |
 |---|---|
-| **Defender XDR** | Score.Read.All, Machine.Read.All, Vulnerability.Read.All, Alert.Read.All, AdvancedQuery.Read.All, SecurityRecommendation.Read.All, Software.Read.All |
-| **Microsoft Graph** | SecurityEvents.Read.All, ThreatHunting.Read.All, SecurityAlert.Read.All, SecurityIncident.Read.All, DeviceManagementManagedDevices.Read.All, DeviceManagementConfiguration.Read.All, DeviceManagementApps.Read.All |
+| **Defender XDR** | Score.Read.All, Machine.Read.All, Vulnerability.Read.All, Alert.Read.All, SecurityRecommendation.Read.All, Software.Read.All |
+| **Microsoft Graph** | SecurityEvents.Read.All, DeviceManagementManagedDevices.Read.All, DeviceManagementConfiguration.Read.All, DeviceManagementApps.Read.All |
 
 > ⚠️ Na het toewijzen kan het tot **1 uur** duren voordat tokens de nieuwe rollen bevatten.
 

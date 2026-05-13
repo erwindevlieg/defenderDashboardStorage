@@ -19,7 +19,13 @@ param tags object = {
 }
 
 // --- App Role Bootstrap ---
-@description('Resource ID van de UAMI die app role assignments mag uitvoeren (bootstrap UAMI)')
+@description('''
+(Optioneel) Resource ID van een bestaande User-Assigned Managed Identity die het deployment script mag uitvoeren.
+Deze UAMI moet de Microsoft Graph app role "AppRoleAssignment.ReadWrite.All" hebben.
+Als je dit invult, worden de Defender- en Graph API-permissies automatisch toegewezen aan de polling identity.
+Formaat: /subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{naam}
+Laat leeg om API-permissies handmatig toe te wijzen (zie docs/bootstrap.md).
+''')
 param scriptRunnerIdentityId string = ''
 
 // --- Source Control ---

@@ -79,21 +79,17 @@ Het script wijst automatisch alle benodigde permissies toe:
 
 **Defender XDR (WindowsDefenderATP):**
 - `Score.Read.All` — Secure Score en Exposure Score
-- `Machine.Read.All` — Device inventory
-- `Vulnerability.Read.All` — Kwetsbaarheden
-- `Alert.Read.All` — Alerts
-- `AdvancedQuery.Read.All` — Advanced Hunting queries
+- `Machine.Read.All` — Device inventory en AV health
+- `Vulnerability.Read.All` — Kwetsbaarheden en secure config
+- `Alert.Read.All` — Alert aggregates
 - `SecurityRecommendation.Read.All` — Beveiligingsaanbevelingen
 - `Software.Read.All` — Software inventory
 
 **Microsoft Graph:**
-- `SecurityEvents.Read.All` — Beveiligingsgebeurtenissen
-- `ThreatHunting.Read.All` — Threat hunting
-- `SecurityAlert.Read.All` — Security alerts
-- `SecurityIncident.Read.All` — Security incidents
+- `SecurityEvents.Read.All` — Secure Scores (via Graph)
 - `DeviceManagementManagedDevices.Read.All` — Intune devices
-- `DeviceManagementConfiguration.Read.All` — Intune configuratie
-- `DeviceManagementApps.Read.All` — Intune apps
+- `DeviceManagementConfiguration.Read.All` — Intune compliance
+- `DeviceManagementApps.Read.All` — Intune detected apps
 
 > ⚠️ **Token propagation:** Na het toewijzen kan het tot **1 uur** duren voordat tokens de nieuwe rollen bevatten. Bij downstream caching kan dit tot 24 uur zijn. Als je `403` fouten ziet, wacht dan even.
 
