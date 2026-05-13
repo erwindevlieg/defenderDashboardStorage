@@ -18,16 +18,6 @@ param tags object = {
   managedBy: 'bicep'
 }
 
-// --- Optionele persona groep Object IDs (lege string = skip) ---
-@description('Object ID van sg-defender-dashboard-management')
-param managementGroupObjectId string = ''
-
-@description('Object ID van sg-defender-dashboard-werkplek')
-param werkplekGroupObjectId string = ''
-
-@description('Object ID van sg-defender-dashboard-security')
-param securityGroupObjectId string = ''
-
 // --- App Role Bootstrap ---
 @description('Resource ID van de UAMI die app role assignments mag uitvoeren (bootstrap UAMI)')
 param scriptRunnerIdentityId string = ''
@@ -132,9 +122,6 @@ module rbacWorkspace 'modules/rbac-workspace.bicep' = {
   params: {
     workspaceId: workspace.outputs.workspaceId
     functionAppPrincipalId: identity.outputs.principalId
-    managementGroupObjectId: managementGroupObjectId
-    werkplekGroupObjectId: werkplekGroupObjectId
-    securityGroupObjectId: securityGroupObjectId
   }
 }
 

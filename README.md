@@ -2,66 +2,127 @@
 
 Platform voor het opslaan van historische data uit Microsoft Defender XDR en Intune APIs, zodat trends en KPIs beschikbaar zijn voor dashboards.
 
-## Deploy to Azure
+## Snel starten
+
+### Stap 1 — Deploy to Azure
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ferwindevlieg%2FdefenderDashboardStorage%2Fmain%2Fazuredeploy.json)
 
-### Wat wordt er gedeployed?
+Maak eerst een resource group aan (bijv. `rg-defender-dashboard` in `West Europe`), klik op de knop hierboven, en vul de parameters in.
 
-| Resource | Doel |
-|---|---|
-| User-Assigned Managed Identity | Authenticatie naar Defender/Graph APIs |
-| Log Analytics Workspace | Opslag van alle historische data (14 custom tabellen) |
-| Data Collection Endpoint + 3 DCRs | Data-ingestie pipeline |
-| Function App (Flex Consumption) | Dagelijkse/wekelijkse API polling |
-| App Configuration | Endpoint configuratie (zero-code wijzigingen) |
-| Application Insights + Alerts | Monitoring en alerting |
-| RBAC assignments | Per-persona toegang (management, werkplek, security) |
+### Stap 2 — Wat moet ik invullen?
 
-### Parameters
-
-| Parameter | Beschrijving | Verplicht |
+| Parameter | Wat invullen | Verplicht |
 |---|---|---|
-| `resourceToken` | Uniek token voor resource namen (3-10 tekens, bijv. `prod01`) | ✅ |
-| `location` | Azure regio (default: resource group locatie) | |
-| `repoUrl` | GitHub repo URL — vult automatisch Function App code in | |
-| `repoBranch` | Branch voor code-deployment (default: `main`) | |
-| `managementGroupObjectId` | Object ID van de management security group | |
-| `werkplekGroupObjectId` | Object ID van de werkplek security group | |
-| `securityGroupObjectId` | Object ID van de security security group | |
-| `scriptRunnerIdentityId` | UAMI resource ID voor app role bootstrap | |
+| `resourceToken` | Kort uniek token voor resource namen, bijv. `prod01` (3-10 tekens) | ✅ |
+| `location` | Azure regio — standaard de locatie van je resource group | |
+| `repoUrl` | URL van je fork/clone, bijv. `https://github.com/jouw-user/defenderDashboardStorage` — dan wordt de Python code automatisch gedeployed | |
+| `repoBranch` | Branch voor code-deployment — standaard `main` | |
+| `scriptRunnerIdentityId` | Resource ID van een UAMI met `AppRoleAssignment.ReadWrite.All` — dan worden API-permissies automatisch toegewezen | |
 
-## Na deployment
+---
 
-### 1. Function App code
+## Wat doet de Deploy knop automatisch?
 
-Als je bij deployment de `repoUrl` parameter hebt ingevuld, wordt de code automatisch uit GitHub gepulled. Je hoeft dan niets extra's te doen.
+De knop deployt de **volledige infrastructuur** in één keer:
 
-**Zonder repoUrl?** Deploy handmatig:
+| Wat | Resource | Automatisch? |
+|---|---|---|
+| Managed Identity | `uai-defender-dashboard-<token>` | ✅ Altijd |
+| Log Analytics Workspace | `law-defender-dashboard-<token>` met 14 custom tabellen | ✅ Altijd |
+| Data Collection Endpoint + 3 DCRs | Data-ingestie pipeline | ✅ Altijd |
+| Function App | `func-defender-dashboard-<token>` (Python 3.11, Flex Consumption) | ✅ Altijd |
+| Storage Account | Voor Function App deployment packages | ✅ Altijd |
+| App Configuration | Endpoint configuratie store | ✅ Altijd |
+| Application Insights + Alerts | Monitoring en foutmeldingen | ✅ Altijd |
+| Function App **code** | Python code uit je GitHub repo | ✅ Als `repoUrl` is ingevuld |
+| API-permissies (app roles) | Defender + Graph API-toegang voor de Managed Identity | ✅ Als `scriptRunnerIdentityId` is ingevuld |
+
+---
+
+## Wat moet ik nog handmatig doen?
+
+Dat hangt af van welke optionele parameters je hebt ingevuld:
+
+### ✅ `repoUrl` ingevuld → niets te doen
+
+De Function App code wordt automatisch uit GitHub gepulled.
+
+### ❌ `repoUrl` niet ingevuld → Function App code deployen
 
 ```bash
 cd function-app
 func azure functionapp publish <functionAppName> --python
 ```
 
-Of via VS Code: open de `function-app/` map en gebruik de Azure Functions extensie.
+Of via VS Code: open `function-app/` en gebruik de Azure Functions extensie.
 
-### 2. Bootstrap (eenmalig)
+### ✅ `scriptRunnerIdentityId` ingevuld → niets te doen
 
-Zie [docs/bootstrap.md](docs/bootstrap.md) voor:
-- Entra security groups aanmaken
-- App role assignments toewijzen aan de Managed Identity
-- Eerste test-run valideren
+De API-permissies worden automatisch toegewezen via een deployment script.
+
+### ❌ `scriptRunnerIdentityId` niet ingevuld → API-permissies handmatig toewijzen
+
+Dit is de **meest voorkomende** situatie. De Managed Identity heeft app roles nodig op Defender en Graph APIs. Zonder deze stap kan de Function App **geen data ophalen**.
+
+Je hebt de rol **Privileged Role Administrator** nodig (of Global Admin) en de [Microsoft Graph PowerShell SDK](https://learn.microsoft.com/en-us/powershell/microsoftgraph/installation):
+
+```powershell
+# 1. Installeer Microsoft Graph module (eenmalig)
+Install-Module Microsoft.Graph.Applications -Scope CurrentUser
+
+# 2. Login als Privileged Role Administrator
+Connect-MgGraph -Scopes "AppRoleAssignment.ReadWrite.All"
+
+# 3. Zoek de principal ID van de Managed Identity
+$uamiPrincipalId = (az identity show `
+  -g <resourceGroup> `
+  -n uai-defender-dashboard-<resourceToken> `
+  --query principalId -o tsv)
+
+# 4. Wijs alle Defender + Graph API-permissies toe
+.\infra\scripts\assign-app-roles.ps1 -ManagedIdentityPrincipalId $uamiPrincipalId
+```
+
+Het script wijst deze permissies toe:
+
+| API | Permissies |
+|---|---|
+| **Defender XDR** | Score.Read.All, Machine.Read.All, Vulnerability.Read.All, Alert.Read.All, AdvancedQuery.Read.All, SecurityRecommendation.Read.All, Software.Read.All |
+| **Microsoft Graph** | SecurityEvents.Read.All, ThreatHunting.Read.All, SecurityAlert.Read.All, SecurityIncident.Read.All, DeviceManagementManagedDevices.Read.All, DeviceManagementConfiguration.Read.All, DeviceManagementApps.Read.All |
+
+> ⚠️ Na het toewijzen kan het tot **1 uur** duren voordat tokens de nieuwe rollen bevatten.
+
+---
+
+## Verificatie
+
+Na alle stappen:
+
+1. **Tabellen** — Controleer in Azure Portal → Log Analytics Workspace → Tables dat alle `_CL` tabellen bestaan
+2. **Eerste data** — De Function App draait dagelijks om 06:00 UTC. Trigger handmatig via Azure Portal → Function App → Functions → Timer trigger → "Run"
+3. **Monitoring** — Check Application Insights voor eventuele fouten (bijv. `403 Forbidden` = app roles nog niet actief)
+
+---
 
 ## Architectuur
 
-- **Compute:** Azure Function App (Python 3.11, Flex Consumption)
-- **Opslag:** Log Analytics Workspace (dedicated, geen Sentinel)
-- **Ingestion:** Logs Ingestion API via Data Collection Rules (DCR/DCE)
-- **Auth:** User-Assigned Managed Identity
-- **Config:** Azure App Configuration (zero-code endpoint wijzigingen)
-- **Dashboards:** Azure Monitor Workbooks
-- **IaC:** Bicep (modulair) + Deploy to Azure
+```
+┌─────────────────┐     ┌───────────────────┐     ┌────────────────────┐
+│  Defender XDR    │────▶│   Function App    │────▶│  Log Analytics     │
+│  Graph API       │     │   (Python 3.11)   │     │  Workspace         │
+│  Intune API      │     │   Flex Consumption│     │  14 custom tabellen│
+└─────────────────┘     └───────┬───────────┘     └────────┬───────────┘
+                                │                          │
+                    ┌───────────┴──────────┐    ┌──────────┴──────────┐
+                    │ App Configuration    │    │ DCE + 3 DCRs        │
+                    │ (endpoint config)    │    │ (data-ingestie)     │
+                    └──────────────────────┘    └─────────────────────┘
+```
+
+- **Auth:** User-Assigned Managed Identity (geen secrets)
+- **Monitoring:** Application Insights + alerting bij fouten
+- **Dashboards:** Azure Monitor Workbooks (zie `workbooks/` map)
 
 ## Databron toevoegen
 
@@ -90,11 +151,17 @@ ruff format --check .
 ## Projectstructuur
 
 ```
-infra/           — Bicep templates (modulair)
-function-app/    — Azure Function App (Python)
-workbooks/       — Azure Monitor Workbook ARM templates
-docs/            — Documentatie
-azuredeploy.json — ARM template (voor Deploy to Azure knop)
+infra/                — Bicep modules (infrastructuur)
+  modules/            — Kern-modules (workspace, dcr, function-app, etc.)
+  custom/             — Eigen connectors toevoegen (zie _example.bicep)
+  scripts/            — Bootstrap scripts (app role assignments)
+function-app/         — Azure Function App (Python)
+  engine/             — Polling engine
+  config/             — Endpoint configuratie
+  tests/              — Pytest tests
+workbooks/            — Azure Monitor Workbook templates
+docs/                 — Documentatie
+azuredeploy.json      — Gecompileerde ARM template (voor Deploy to Azure knop)
 ```
 
 ## Licentie

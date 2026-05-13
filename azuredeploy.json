@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "3919069830905807412"
+      "templateHash": "11587357104257951566"
     }
   },
   "parameters": {
@@ -32,27 +32,6 @@
       },
       "metadata": {
         "description": "Tags voor alle resources"
-      }
-    },
-    "managementGroupObjectId": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Object ID van sg-defender-dashboard-management"
-      }
-    },
-    "werkplekGroupObjectId": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Object ID van sg-defender-dashboard-werkplek"
-      }
-    },
-    "securityGroupObjectId": {
-      "type": "string",
-      "defaultValue": "",
-      "metadata": {
-        "description": "Object ID van sg-defender-dashboard-security"
       }
     },
     "scriptRunnerIdentityId": {
@@ -2578,15 +2557,6 @@
           },
           "functionAppPrincipalId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.principalId.value]"
-          },
-          "managementGroupObjectId": {
-            "value": "[parameters('managementGroupObjectId')]"
-          },
-          "werkplekGroupObjectId": {
-            "value": "[parameters('werkplekGroupObjectId')]"
-          },
-          "securityGroupObjectId": {
-            "value": "[parameters('securityGroupObjectId')]"
           }
         },
         "template": {
@@ -2596,7 +2566,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "12164998008976524693"
+              "templateHash": "12859981796523471452"
             }
           },
           "parameters": {
@@ -2604,27 +2574,6 @@
               "type": "string",
               "metadata": {
                 "description": "Resource ID van de Log Analytics workspace"
-              }
-            },
-            "managementGroupObjectId": {
-              "type": "string",
-              "defaultValue": "",
-              "metadata": {
-                "description": "Object ID van sg-defender-dashboard-management (optioneel, lege string = skip)"
-              }
-            },
-            "werkplekGroupObjectId": {
-              "type": "string",
-              "defaultValue": "",
-              "metadata": {
-                "description": "Object ID van sg-defender-dashboard-werkplek (optioneel)"
-              }
-            },
-            "securityGroupObjectId": {
-              "type": "string",
-              "defaultValue": "",
-              "metadata": {
-                "description": "Object ID van sg-defender-dashboard-security (optioneel)"
               }
             },
             "functionAppPrincipalId": {
@@ -2635,93 +2584,9 @@
             }
           },
           "variables": {
-            "logAnalyticsDataReaderRoleId": "3b03c2da-16b3-4a49-8834-0f8130efdd3b",
-            "workbookReaderRoleId": "b279062a-9be3-42a0-92ae-8b3cf002ec4d",
-            "workbookContributorRoleId": "e8ddcd69-c73f-4f9f-9844-4100522f16ad",
-            "monitoringMetricsPublisherRoleId": "3913510d-678f-4e67-9dde-b59c5db8a5b8",
-            "managementTableCondition": "(\r\n  (\r\n    !(ActionMatches{'Microsoft.OperationalInsights/workspaces/tables/data/read'})\r\n  )\r\n  OR\r\n  (\r\n    @Resource[Microsoft.OperationalInsights/workspaces/tables:name]\r\n    ForAllOfAnyValues:StringEquals {\r\n      'DefenderSecureScore_CL',\r\n      'DefenderExposureScore_CL',\r\n      'DefenderConfigurationScore_CL',\r\n      'DefenderAlertAggregates_CL',\r\n      'DefenderRecommendations_CL'\r\n    }\r\n  )\r\n)",
-            "werkplekTableCondition": "(\r\n  (\r\n    !(ActionMatches{'Microsoft.OperationalInsights/workspaces/tables/data/read'})\r\n  )\r\n  OR\r\n  (\r\n    @Resource[Microsoft.OperationalInsights/workspaces/tables:name]\r\n    ForAllOfAnyValues:StringEquals {\r\n      'DefenderDeviceInventory_CL',\r\n      'DefenderSoftwareInventory_CL',\r\n      'DefenderAVHealth_CL',\r\n      'DefenderSecureConfig_CL',\r\n      'DefenderVulnDelta_CL',\r\n      'IntuneDevices_CL',\r\n      'IntuneDetectedApps_CL',\r\n      'IntuneComplianceReports_CL'\r\n    }\r\n  )\r\n)"
+            "monitoringMetricsPublisherRoleId": "3913510d-678f-4e67-9dde-b59c5db8a5b8"
           },
           "resources": [
-            {
-              "condition": "[not(empty(parameters('managementGroupObjectId')))]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "scope": "[resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/')))]",
-              "name": "[guid(resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/'))), parameters('managementGroupObjectId'), variables('logAnalyticsDataReaderRoleId'))]",
-              "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('logAnalyticsDataReaderRoleId'))]",
-                "principalId": "[parameters('managementGroupObjectId')]",
-                "principalType": "Group",
-                "condition": "[variables('managementTableCondition')]",
-                "conditionVersion": "2.0",
-                "description": "Management: Data Reader beperkt tot score/KPI-tabellen via ABAC"
-              }
-            },
-            {
-              "condition": "[not(empty(parameters('managementGroupObjectId')))]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "name": "[guid(resourceGroup().id, parameters('managementGroupObjectId'), variables('workbookReaderRoleId'), 'workbook')]",
-              "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('workbookReaderRoleId'))]",
-                "principalId": "[parameters('managementGroupObjectId')]",
-                "principalType": "Group",
-                "description": "Management: Workbook Reader op resource group"
-              }
-            },
-            {
-              "condition": "[not(empty(parameters('werkplekGroupObjectId')))]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "scope": "[resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/')))]",
-              "name": "[guid(resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/'))), parameters('werkplekGroupObjectId'), variables('logAnalyticsDataReaderRoleId'))]",
-              "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('logAnalyticsDataReaderRoleId'))]",
-                "principalId": "[parameters('werkplekGroupObjectId')]",
-                "principalType": "Group",
-                "condition": "[variables('werkplekTableCondition')]",
-                "conditionVersion": "2.0",
-                "description": "Werkplek: Data Reader beperkt tot device/endpoint-tabellen via ABAC"
-              }
-            },
-            {
-              "condition": "[not(empty(parameters('werkplekGroupObjectId')))]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "name": "[guid(resourceGroup().id, parameters('werkplekGroupObjectId'), variables('workbookReaderRoleId'), 'workbook')]",
-              "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('workbookReaderRoleId'))]",
-                "principalId": "[parameters('werkplekGroupObjectId')]",
-                "principalType": "Group",
-                "description": "Werkplek: Workbook Reader op resource group"
-              }
-            },
-            {
-              "condition": "[not(empty(parameters('securityGroupObjectId')))]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "scope": "[resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/')))]",
-              "name": "[guid(resourceId('Microsoft.OperationalInsights/workspaces', last(split(parameters('workspaceId'), '/'))), parameters('securityGroupObjectId'), variables('logAnalyticsDataReaderRoleId'))]",
-              "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('logAnalyticsDataReaderRoleId'))]",
-                "principalId": "[parameters('securityGroupObjectId')]",
-                "principalType": "Group",
-                "description": "Security: Data Reader met volledige tabeltoegang (geen ABAC-conditie)"
-              }
-            },
-            {
-              "condition": "[not(empty(parameters('securityGroupObjectId')))]",
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "name": "[guid(resourceGroup().id, parameters('securityGroupObjectId'), variables('workbookContributorRoleId'), 'workbook')]",
-              "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('workbookContributorRoleId'))]",
-                "principalId": "[parameters('securityGroupObjectId')]",
-                "principalType": "Group",
-                "description": "Security: Workbook Contributor op resource group"
-              }
-            },
             {
               "type": "Microsoft.Authorization/roleAssignments",
               "apiVersion": "2022-04-01",

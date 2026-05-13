@@ -2,126 +2,140 @@
 
 ## Overzicht
 
-Dit document beschrijft de eenmalige configuratiestappen die nodig zijn voordat het platform gedeployed kan worden via GitHub Actions.
+Dit document beschrijft de stappen om het platform operationeel te maken. De Deploy to Azure knop regelt het meeste automatisch — hieronder staat wat er eventueel nog handmatig nodig is.
 
 ---
 
-## 1. GitHub Repository
+## Vereisten
 
-```bash
-# In de projectdirectory
-git remote add origin https://github.com/<org>/defenderDashboardStorage.git
-git branch -M main
-git push -u origin main
-```
-
-## 2. Entra ID Security Groups
-
-Maak drie security groups aan in Microsoft Entra ID:
-
-| Groep | Doel |
+| Wat | Waarom |
 |---|---|
-| `sg-defender-dashboard-management` | C-level/afdelingshoofden — alleen KPI-dashboards |
-| `sg-defender-dashboard-werkplek` | Werkplek IT — device/endpoint dashboards |
-| `sg-defender-dashboard-security` | SOC/Security — volledige toegang |
+| Azure subscription met Contributor-rechten | Resources aanmaken |
+| Privileged Role Administrator (of Global Admin) | API-permissies toewijzen aan de Managed Identity |
+| [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) | Handmatige commando's uitvoeren |
+| [Microsoft Graph PowerShell SDK](https://learn.microsoft.com/powershell/microsoftgraph/installation) | App role assignments script |
 
-```bash
-az ad group create --display-name "sg-defender-dashboard-management" --mail-nickname "sg-defender-dashboard-management" --security-enabled true
-az ad group create --display-name "sg-defender-dashboard-werkplek" --mail-nickname "sg-defender-dashboard-werkplek" --security-enabled true
-az ad group create --display-name "sg-defender-dashboard-security" --mail-nickname "sg-defender-dashboard-security" --security-enabled true
-```
+---
 
-Noteer de Object IDs en vul ze in bij `infra/main.bicepparam`.
-
-## 3. Azure Resource Group
+## Stap 1 — Resource Group aanmaken
 
 ```bash
 az group create --name rg-defender-dashboard --location westeurope
 ```
 
-## 4. OIDC Federation voor GitHub Actions
+## Stap 2 — Deploy to Azure
 
-### Optie A: App Registration (aanbevolen voor CI/CD)
+Klik op de knop in de [README](../README.md) of gebruik de directe link:
 
-```bash
-# App Registration aanmaken
-az ad app create --display-name "github-defender-dashboard-cicd"
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ferwindevlieg%2FdefenderDashboardStorage%2Fmain%2Fazuredeploy.json)
 
-# Noteer de appId
-APP_ID=$(az ad app list --display-name "github-defender-dashboard-cicd" --query "[0].appId" -o tsv)
+**Minimaal invullen:**
+- `resourceToken` — bijv. `prod01`
 
-# Service Principal aanmaken
-az ad sp create --id $APP_ID
+**Aanbevolen ook invullen:**
+- `repoUrl` — URL van je fork/clone, zodat de Function App code automatisch mee-deployed wordt
 
-# Federated credential voor GitHub Actions
-az ad app federated-credential create --id $APP_ID --parameters '{
-  "name": "github-actions-main",
-  "issuer": "https://token.actions.githubusercontent.com",
-  "subject": "repo:<org>/defenderDashboardStorage:ref:refs/heads/main",
-  "audiences": ["api://AzureADTokenExchange"]
-}'
+Zie de [README](../README.md) voor een beschrijving van alle parameters.
 
-# RBAC: Contributor op de resource group
-az role assignment create \
-  --assignee $APP_ID \
-  --role Contributor \
-  --scope /subscriptions/<sub-id>/resourceGroups/rg-defender-dashboard
-```
+## Stap 3 — API-permissies toewijzen
 
-### GitHub Secrets configureren
+> ⚡ Als je `scriptRunnerIdentityId` hebt ingevuld bij stap 2, is dit al automatisch gedaan. Sla deze stap dan over.
 
-Stel de volgende secrets in op de GitHub repository:
+De Managed Identity heeft app roles nodig op de Defender XDR en Microsoft Graph APIs. Zonder deze permissies krijgt de Function App `403 Forbidden` fouten.
 
-| Secret | Waarde |
-|---|---|
-| `AZURE_CLIENT_ID` | App Registration appId |
-| `AZURE_TENANT_ID` | Entra Tenant ID |
-| `AZURE_SUBSCRIPTION_ID` | Azure Subscription ID |
-
-## 5. App Role Assignments (Privileged Role Administrator)
-
-De Managed Identity heeft app roles nodig op WindowsDefenderATP en Microsoft Graph. Dit vereist éénmalig een **Privileged Role Administrator**.
-
-### Optie A: Handmatig via PowerShell
-
-Na de eerste `deploy-infra` run (die de UAMI aanmaakt), voer uit:
+### 3a. Installeer de Microsoft Graph module
 
 ```powershell
-# Connect als Privileged Role Administrator
+Install-Module Microsoft.Graph.Applications -Scope CurrentUser -Force
+```
+
+### 3b. Login
+
+```powershell
 Connect-MgGraph -Scopes "AppRoleAssignment.ReadWrite.All"
+```
 
-# Haal de UAMI principal ID op
-$uamiPrincipalId = (az identity show -g rg-defender-dashboard -n uai-defender-dashboard-prod01 --query principalId -o tsv)
+Je wordt gevraagd om in te loggen. Gebruik een account met **Privileged Role Administrator** of **Global Admin**.
 
-# Voer het assign-app-roles.ps1 script uit
+### 3c. Zoek de Managed Identity
+
+```powershell
+# Vervang <resourceGroup> en <resourceToken> met jouw waarden
+$uamiPrincipalId = (az identity show `
+  -g <resourceGroup> `
+  -n uai-defender-dashboard-<resourceToken> `
+  --query principalId -o tsv)
+
+Write-Output "Principal ID: $uamiPrincipalId"
+```
+
+### 3d. Voer het bootstrap-script uit
+
+```powershell
 .\infra\scripts\assign-app-roles.ps1 -ManagedIdentityPrincipalId $uamiPrincipalId
 ```
 
-### Optie B: Via Bicep deploymentScript
+Het script wijst automatisch alle benodigde permissies toe:
 
-Vul `scriptRunnerIdentityId` in `main.bicepparam` in met de resource ID van een UAMI die `AppRoleAssignment.ReadWrite.All` heeft. De Bicep deployment voert het script dan automatisch uit.
+**Defender XDR (WindowsDefenderATP):**
+- `Score.Read.All` — Secure Score en Exposure Score
+- `Machine.Read.All` — Device inventory
+- `Vulnerability.Read.All` — Kwetsbaarheden
+- `Alert.Read.All` — Alerts
+- `AdvancedQuery.Read.All` — Advanced Hunting queries
+- `SecurityRecommendation.Read.All` — Beveiligingsaanbevelingen
+- `Software.Read.All` — Software inventory
 
-## 6. Eerste Deployment
+**Microsoft Graph:**
+- `SecurityEvents.Read.All` — Beveiligingsgebeurtenissen
+- `ThreatHunting.Read.All` — Threat hunting
+- `SecurityAlert.Read.All` — Security alerts
+- `SecurityIncident.Read.All` — Security incidents
+- `DeviceManagementManagedDevices.Read.All` — Intune devices
+- `DeviceManagementConfiguration.Read.All` — Intune configuratie
+- `DeviceManagementApps.Read.All` — Intune apps
+
+> ⚠️ **Token propagation:** Na het toewijzen kan het tot **1 uur** duren voordat tokens de nieuwe rollen bevatten. Bij downstream caching kan dit tot 24 uur zijn. Als je `403` fouten ziet, wacht dan even.
+
+## Stap 4 — Verificatie
+
+### Tabellen controleren
+
+Open Azure Portal → Log Analytics Workspace → Tables. Je zou 14 tabellen moeten zien die eindigen op `_CL`:
+
+- `DefenderExposureScore_CL`, `DefenderSecureScore_CL`, `DefenderConfigScore_CL`
+- `DefenderDeviceInventory_CL`, `DefenderAVHealth_CL`, `DefenderSecureConfig_CL`
+- `DefenderRecommendations_CL`, `DefenderVulnDelta_CL`, `DefenderAlertAggregates_CL`
+- `DefenderDeviceSoftware_CL`
+- `IntuneDevices_CL`, `IntuneCompliance_CL`, `IntuneAppInventory_CL`, `IntuneConfigProfiles_CL`
+
+### Eerste data ophalen
+
+De Function App draait automatisch op schema:
+- **Dagelijks 06:00 UTC** — scores, alerts, kwetsbaarheden
+- **Wekelijks zondag 02:00 UTC** — device inventory, software, Intune
+
+**Handmatig triggeren:** Azure Portal → Function App → Functions → kies een timer function → "Code + Test" → "Run"
+
+### Fouten bekijken
+
+Azure Portal → Application Insights → Failures
+
+Veelvoorkomende fouten:
+| Fout | Oorzaak | Oplossing |
+|---|---|---|
+| `403 Forbidden` | App roles nog niet actief | Wacht tot 1 uur na stap 3 |
+| `401 Unauthorized` | Managed Identity niet gekoppeld | Controleer Function App → Identity |
+| Geen data na 24u | Timer niet actief | Controleer Function App → Functions |
+
+---
+
+## Opnieuw deployen
+
+De deployment is **idempotent** — je kunt de Deploy to Azure knop opnieuw klikken zonder dat bestaande data verloren gaat. Alleen nieuwe of gewijzigde resources worden aangemaakt/bijgewerkt.
+
+Na wijzigingen aan Bicep-bestanden moet `azuredeploy.json` opnieuw gegenereerd worden:
 
 ```bash
-# Test lokaal
-cd function-app && pip install -r requirements.txt && pytest tests/ -v
-
-# Push naar GitHub → workflows draaien automatisch
-git add -A && git commit -m "Initial implementation" && git push
+az bicep build --file infra/main.bicep --outfile azuredeploy.json
 ```
-
-## 7. Verificatie
-
-Na deployment:
-
-1. **Function App health check:**
-   ```bash
-   curl https://func-defender-dashboard-prod01.azurewebsites.net/api/health
-   ```
-
-2. **Log Analytics tabellen:** Controleer in Azure Portal dat alle `_CL` tabellen zijn aangemaakt
-
-3. **Eerste data:** Wacht tot de eerste timer trigger draait (06:00 UTC dagelijks) of trigger handmatig via Azure Portal
-
-> ⚠️ **Token propagation:** Na het toewijzen van app roles kan het tot 1 uur duren voordat tokens de nieuwe rollen bevatten. Bij downstream caching kan dit tot 24 uur zijn.
