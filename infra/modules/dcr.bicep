@@ -82,6 +82,7 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
           { name: 'Vendor', type: 'string' }
           { name: 'ProductName', type: 'string' }
           { name: 'SubCategory', type: 'string' }
+          { name: 'RelatedSoftwareId', type: 'string' }
         ]
       }
     }
@@ -142,6 +143,7 @@ resource dcrWeeklySnapshots 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
         columns: [
           { name: 'TimeGenerated', type: 'datetime' }
           { name: 'DeviceId', type: 'string' }
+          { name: 'AadDeviceId', type: 'string' }
           { name: 'DeviceName', type: 'string' }
           { name: 'OsPlatform', type: 'string' }
           { name: 'OsVersion', type: 'string' }
@@ -168,6 +170,7 @@ resource dcrWeeklySnapshots 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
         columns: [
           { name: 'TimeGenerated', type: 'datetime' }
           { name: 'DeviceId', type: 'string' }
+          { name: 'AadDeviceId', type: 'string' }
           { name: 'DeviceName', type: 'string' }
           { name: 'AVEngineVersion', type: 'string' }
           { name: 'AVSignatureVersion', type: 'string' }
@@ -182,6 +185,7 @@ resource dcrWeeklySnapshots 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
         columns: [
           { name: 'TimeGenerated', type: 'datetime' }
           { name: 'DeviceId', type: 'string' }
+          { name: 'AadDeviceId', type: 'string' }
           { name: 'DeviceName', type: 'string' }
           { name: 'ConfigurationId', type: 'string' }
           { name: 'ConfigurationCategory', type: 'string' }
@@ -194,8 +198,10 @@ resource dcrWeeklySnapshots 'Microsoft.Insights/dataCollectionRules@2023-03-11' 
         columns: [
           { name: 'TimeGenerated', type: 'datetime' }
           { name: 'DeviceId', type: 'string' }
+          { name: 'AadDeviceId', type: 'string' }
           { name: 'CveId', type: 'string' }
           { name: 'EventType', type: 'string' }
+          { name: 'SoftwareId', type: 'string' }
           { name: 'SoftwareName', type: 'string' }
           { name: 'SoftwareVendor', type: 'string' }
           { name: 'SoftwareVersion', type: 'string' }
@@ -260,6 +266,7 @@ resource dcrIntune 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
         columns: [
           { name: 'TimeGenerated', type: 'datetime' }
           { name: 'DeviceId', type: 'string' }
+          { name: 'AadDeviceId', type: 'string' }
           { name: 'DeviceName', type: 'string' }
           { name: 'OperatingSystem', type: 'string' }
           { name: 'OsVersion', type: 'string' }

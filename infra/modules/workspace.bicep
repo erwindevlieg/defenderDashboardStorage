@@ -150,6 +150,7 @@ resource tableRecommendations 'Microsoft.OperationalInsights/workspaces/tables@2
         { name: 'Vendor', type: 'string' }
         { name: 'ProductName', type: 'string' }
         { name: 'SubCategory', type: 'string' }
+        { name: 'RelatedSoftwareId', type: 'string' } // Join met SoftwareInventory
       ]
     }
   }
@@ -168,7 +169,8 @@ resource tableDeviceInventory 'Microsoft.OperationalInsights/workspaces/tables@2
       name: 'DefenderDeviceInventory_CL'
       columns: [
         { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }
+        { name: 'DeviceId', type: 'string' }        // MDE device ID
+        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — universal join key
         { name: 'DeviceName', type: 'string' }
         { name: 'OsPlatform', type: 'string' }
         { name: 'OsVersion', type: 'string' }
@@ -214,7 +216,8 @@ resource tableAVHealth 'Microsoft.OperationalInsights/workspaces/tables@2022-10-
       name: 'DefenderAVHealth_CL'
       columns: [
         { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }
+        { name: 'DeviceId', type: 'string' }        // MDE device ID
+        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — join met Intune
         { name: 'DeviceName', type: 'string' }
         { name: 'AVEngineVersion', type: 'string' }
         { name: 'AVSignatureVersion', type: 'string' }
@@ -238,7 +241,8 @@ resource tableSecureConfig 'Microsoft.OperationalInsights/workspaces/tables@2022
       name: 'DefenderSecureConfig_CL'
       columns: [
         { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }
+        { name: 'DeviceId', type: 'string' }        // MDE device ID
+        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — join met Intune
         { name: 'DeviceName', type: 'string' }
         { name: 'ConfigurationId', type: 'string' }
         { name: 'ConfigurationCategory', type: 'string' }
@@ -260,9 +264,11 @@ resource tableVulnDelta 'Microsoft.OperationalInsights/workspaces/tables@2022-10
       name: 'DefenderVulnDelta_CL'
       columns: [
         { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }
+        { name: 'DeviceId', type: 'string' }        // MDE device ID
+        { name: 'AadDeviceId', type: 'string' }     // Entra device ID
         { name: 'CveId', type: 'string' }
         { name: 'EventType', type: 'string' } // New, Fixed, Updated
+        { name: 'SoftwareId', type: 'string' }      // Join met SoftwareInventory
         { name: 'SoftwareName', type: 'string' }
         { name: 'SoftwareVendor', type: 'string' }
         { name: 'SoftwareVersion', type: 'string' }
@@ -285,7 +291,8 @@ resource tableIntuneDevices 'Microsoft.OperationalInsights/workspaces/tables@202
       name: 'IntuneDevices_CL'
       columns: [
         { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }
+        { name: 'DeviceId', type: 'string' }         // Intune device ID
+        { name: 'AadDeviceId', type: 'string' }      // Entra device ID — join met Defender
         { name: 'DeviceName', type: 'string' }
         { name: 'OperatingSystem', type: 'string' }
         { name: 'OsVersion', type: 'string' }
