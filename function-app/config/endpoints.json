@@ -1,0 +1,105 @@
+{
+  "daily": [
+    {
+      "key": "exposureScore",
+      "url": "https://api.securitycenter.microsoft.com/api/exposureScore",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderExposureScore_CL",
+      "dcr": "daily",
+      "transform": "single"
+    },
+    {
+      "key": "configurationScore",
+      "url": "https://api.securitycenter.microsoft.com/api/configurationScore",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderConfigurationScore_CL",
+      "dcr": "daily",
+      "transform": "single"
+    },
+    {
+      "key": "secureScore",
+      "url": "https://graph.microsoft.com/v1.0/security/secureScores?$top=1",
+      "method": "GET",
+      "scope": "https://graph.microsoft.com/.default",
+      "stream": "Custom-DefenderSecureScore_CL",
+      "dcr": "daily",
+      "transform": "graphList"
+    },
+    {
+      "key": "recommendations",
+      "url": "https://api.securitycenter.microsoft.com/api/recommendations",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderRecommendations_CL",
+      "dcr": "daily",
+      "transform": "list"
+    },
+    {
+      "key": "vulnDelta",
+      "url": "https://api.securitycenter.microsoft.com/api/machines/SoftwareVulnerabilityChangesByMachine",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderVulnDelta_CL",
+      "dcr": "daily",
+      "transform": "list"
+    }
+  ],
+  "weekly": [
+    {
+      "key": "deviceInventory",
+      "url": "https://api.securitycenter.microsoft.com/api/machines",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderDeviceInventory_CL",
+      "dcr": "weekly",
+      "transform": "list"
+    },
+    {
+      "key": "softwareInventory",
+      "url": "https://api.securitycenter.microsoft.com/api/Software",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderSoftwareInventory_CL",
+      "dcr": "weekly",
+      "transform": "list"
+    },
+    {
+      "key": "avHealth",
+      "url": "https://api.securitycenter.microsoft.com/api/deviceavstatus",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderAVHealth_CL",
+      "dcr": "weekly",
+      "transform": "exportList"
+    },
+    {
+      "key": "secureConfig",
+      "url": "https://api.securitycenter.microsoft.com/api/machines/SecureConfigurationsAssessmentByMachine",
+      "method": "GET",
+      "scope": "https://api.securitycenter.microsoft.com/.default",
+      "stream": "Custom-DefenderSecureConfig_CL",
+      "dcr": "weekly",
+      "transform": "exportList"
+    },
+    {
+      "key": "intuneDevices",
+      "url": "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices",
+      "method": "GET",
+      "scope": "https://graph.microsoft.com/.default",
+      "stream": "Custom-IntuneDevices_CL",
+      "dcr": "intune",
+      "transform": "graphList"
+    },
+    {
+      "key": "intuneDetectedApps",
+      "url": "https://graph.microsoft.com/v1.0/deviceManagement/detectedApps",
+      "method": "GET",
+      "scope": "https://graph.microsoft.com/.default",
+      "stream": "Custom-IntuneDetectedApps_CL",
+      "dcr": "intune",
+      "transform": "graphList"
+    }
+  ]
+}

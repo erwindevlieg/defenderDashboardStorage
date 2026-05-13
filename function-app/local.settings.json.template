@@ -1,0 +1,13 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AZURE_CLIENT_ID": "<your-uami-client-id>",
+    "DCE_ENDPOINT": "<your-dce-endpoint-uri>",
+    "DCR_DAILY_SCORES_ID": "<dcr-immutable-id>",
+    "DCR_WEEKLY_SNAPSHOTS_ID": "<dcr-immutable-id>",
+    "DCR_INTUNE_ID": "<dcr-immutable-id>",
+    "APP_CONFIG_ENDPOINT": "<your-app-config-endpoint>"
+  }
+}
