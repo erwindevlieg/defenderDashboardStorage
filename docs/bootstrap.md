@@ -84,6 +84,7 @@ Het script wijst automatisch alle benodigde permissies toe:
 - `Alert.Read.All` — Alert aggregates
 - `SecurityRecommendation.Read.All` — Beveiligingsaanbevelingen
 - `Software.Read.All` — Software inventory
+- `AdvancedQuery.Read.All` — Advanced Hunting queries (AV status, ASR events, protection state)
 
 **Microsoft Graph:**
 - `SecurityEvents.Read.All` — Secure Scores (via Graph)

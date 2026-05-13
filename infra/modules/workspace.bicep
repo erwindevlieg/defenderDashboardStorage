@@ -272,6 +272,103 @@ resource tableIntuneDevices 'Microsoft.OperationalInsights/workspaces/tables@202
   }
 }
 
+// ASR Events: Analytics — dagelijks aggregaat van ASR blocks/audits
+resource tableASREvents 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'DefenderASREvents_CL'
+  properties: {
+    plan: 'Analytics'
+    retentionInDays: 365
+    totalRetentionInDays: 730
+    schema: {
+      name: 'DefenderASREvents_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'RuleName', type: 'string' }
+        { name: 'ActionType', type: 'string' }
+        { name: 'EventCount', type: 'int' }
+        { name: 'UniqueDevices', type: 'int' }
+      ]
+    }
+  }
+}
+
+// ProtectionState: Analytics — tamper/cloud/realtime protection status per config
+resource tableProtectionState 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'DefenderProtectionState_CL'
+  properties: {
+    plan: 'Analytics'
+    retentionInDays: 365
+    totalRetentionInDays: 730
+    schema: {
+      name: 'DefenderProtectionState_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'ConfigurationId', type: 'string' }
+        { name: 'ConfigurationName', type: 'string' }
+        { name: 'ConfigurationCategory', type: 'string' }
+        { name: 'ConfigurationSubcategory', type: 'string' }
+        { name: 'CompliantDevices', type: 'int' }
+        { name: 'NonCompliantDevices', type: 'int' }
+        { name: 'TotalDevices', type: 'int' }
+      ]
+    }
+  }
+}
+
+// AVOutdated: Analytics — devices met verouderde AV (via Advanced Hunting)
+resource tableAVOutdated 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'DefenderAVOutdated_CL'
+  properties: {
+    plan: 'Analytics'
+    retentionInDays: 365
+    totalRetentionInDays: 730
+    schema: {
+      name: 'DefenderAVOutdated_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'DeviceId', type: 'string' }
+        { name: 'DeviceName', type: 'string' }
+        { name: 'OSPlatform', type: 'string' }
+        { name: 'AvMode', type: 'string' }
+        { name: 'AvIsSignatureUpToDate', type: 'string' }
+        { name: 'AvIsEngineUpToDate', type: 'string' }
+        { name: 'AvIsPlatformUpToDate', type: 'string' }
+        { name: 'AvSignatureVersion', type: 'string' }
+        { name: 'AvEngineVersion', type: 'string' }
+        { name: 'AvPlatformVersion', type: 'string' }
+        { name: 'AvSignaturePublishTime', type: 'datetime' }
+        { name: 'AvSignatureDataRefreshTime', type: 'datetime' }
+        { name: 'SignatureAgeDays', type: 'int' }
+      ]
+    }
+  }
+}
+
+// AVDetections: Analytics — dagelijks aggregaat van malware-detecties (via Advanced Hunting)
+resource tableAVDetections 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
+  parent: workspace
+  name: 'DefenderAVDetections_CL'
+  properties: {
+    plan: 'Analytics'
+    retentionInDays: 365
+    totalRetentionInDays: 730
+    schema: {
+      name: 'DefenderAVDetections_CL'
+      columns: [
+        { name: 'TimeGenerated', type: 'datetime' }
+        { name: 'ThreatName', type: 'string' }
+        { name: 'DetectionSource', type: 'string' }
+        { name: 'DetectionCount', type: 'int' }
+        { name: 'UniqueDevices', type: 'int' }
+        { name: 'RemediatedCount', type: 'int' }
+      ]
+    }
+  }
+}
+
 // ============================================================
 // Custom Tabellen — Basic Plan (standalone queries, goedkoper)
 // ============================================================

@@ -82,7 +82,76 @@ class TestDefenderClient:
         assert len(result["value"]) == 2
 
 
-class TestDefenderClientRetry:
+class TestDefenderClientAdvancedHunting:
+    """Tests voor DefenderClient Advanced Hunting."""
+
+    @pytest.mark.asyncio
+    async def test_run_advanced_query_success(self, mock_credential):
+        """Test succesvolle Advanced Hunting query."""
+        client = DefenderClient(mock_credential)
+
+        ah_response = {
+            "Schema": [{"Name": "RuleName", "Type": "String"}],
+            "Results": [
+                {"RuleName": "AsrLsassCredentialTheft", "ActionType": "Blocked"}
+            ],
+        }
+
+        mock_response = AsyncMock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(return_value=ah_response)
+
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_response),
+                __aexit__=AsyncMock(return_value=False),
+            )
+        )
+
+        with patch(
+            "aiohttp.ClientSession",
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_session),
+                __aexit__=AsyncMock(return_value=False),
+            ),
+        ):
+            result = await client.run_advanced_query("DeviceEvents | take 1")
+
+        assert result is not None
+        assert "Results" in result
+        assert len(result["Results"]) == 1
+        mock_session.post.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_run_advanced_query_failure(self, mock_credential):
+        """Test AH query die faalt retourneert None."""
+        client = DefenderClient(mock_credential)
+
+        mock_response = AsyncMock()
+        mock_response.status = 400
+        mock_response.headers = {}
+        mock_response.text = AsyncMock(return_value="Bad Request")
+
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_response),
+                __aexit__=AsyncMock(return_value=False),
+            )
+        )
+
+        with patch(
+            "aiohttp.ClientSession",
+            return_value=AsyncMock(
+                __aenter__=AsyncMock(return_value=mock_session),
+                __aexit__=AsyncMock(return_value=False),
+            ),
+        ):
+            result = await client.run_advanced_query("invalid query")
+
+        assert result is None
+
     """Tests voor DefenderClient retry logic."""
 
     def _make_response(self, status, json_data=None, headers=None):

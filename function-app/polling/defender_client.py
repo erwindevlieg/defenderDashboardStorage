@@ -13,6 +13,9 @@ from azure.identity import DefaultAzureCredential
 logger = logging.getLogger(__name__)
 
 DEFENDER_SCOPE = "https://api.securitycenter.microsoft.com/.default"
+ADVANCED_HUNTING_URL = (
+    "https://api.securitycenter.microsoft.com/api/advancedqueries/run"
+)
 MAX_RETRIES = 3
 RETRY_BACKOFF_BASE = 2  # seconds
 
@@ -69,10 +72,29 @@ class DefenderClient:
             return {"value": all_values}
         return None
 
+    async def run_advanced_query(self, kql: str) -> dict | None:
+        """Voer een Advanced Hunting KQL query uit.
+
+        Args:
+            kql: KQL query string.
+
+        Returns:
+            Response dict met 'Results' key, of None bij fouten.
+        """
+        timeout = aiohttp.ClientTimeout(total=120, connect=5, sock_read=90)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            return await self._request_with_retry(
+                session, ADVANCED_HUNTING_URL, method="POST", json_body={"Query": kql}
+            )
+
     async def _request_with_retry(
-        self, session: aiohttp.ClientSession, url: str
+        self,
+        session: aiohttp.ClientSession,
+        url: str,
+        method: str = "GET",
+        json_body: dict | None = None,
     ) -> dict | None:
-        """Voer een HTTP GET uit met retry en exponential backoff."""
+        """Voer een HTTP request uit met retry en exponential backoff."""
         for attempt in range(MAX_RETRIES):
             headers = {
                 "Authorization": f"Bearer {self._get_token()}",
@@ -80,7 +102,12 @@ class DefenderClient:
             }
 
             try:
-                async with session.get(url, headers=headers) as response:
+                if method == "POST":
+                    ctx = session.post(url, headers=headers, json=json_body)
+                else:
+                    ctx = session.get(url, headers=headers)
+
+                async with ctx as response:
                     if response.status == 200:
                         return await response.json()
 

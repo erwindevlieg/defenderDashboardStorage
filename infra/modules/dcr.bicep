@@ -85,6 +85,55 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
           { name: 'RelatedSoftwareId', type: 'string' }
         ]
       }
+      'Custom-DefenderASREvents_CL': {
+        columns: [
+          { name: 'TimeGenerated', type: 'datetime' }
+          { name: 'RuleName', type: 'string' }
+          { name: 'ActionType', type: 'string' }
+          { name: 'EventCount', type: 'int' }
+          { name: 'UniqueDevices', type: 'int' }
+        ]
+      }
+      'Custom-DefenderProtectionState_CL': {
+        columns: [
+          { name: 'TimeGenerated', type: 'datetime' }
+          { name: 'ConfigurationId', type: 'string' }
+          { name: 'ConfigurationName', type: 'string' }
+          { name: 'ConfigurationCategory', type: 'string' }
+          { name: 'ConfigurationSubcategory', type: 'string' }
+          { name: 'CompliantDevices', type: 'int' }
+          { name: 'NonCompliantDevices', type: 'int' }
+          { name: 'TotalDevices', type: 'int' }
+        ]
+      }
+      'Custom-DefenderAVOutdated_CL': {
+        columns: [
+          { name: 'TimeGenerated', type: 'datetime' }
+          { name: 'DeviceId', type: 'string' }
+          { name: 'DeviceName', type: 'string' }
+          { name: 'OSPlatform', type: 'string' }
+          { name: 'AvMode', type: 'string' }
+          { name: 'AvIsSignatureUpToDate', type: 'string' }
+          { name: 'AvIsEngineUpToDate', type: 'string' }
+          { name: 'AvIsPlatformUpToDate', type: 'string' }
+          { name: 'AvSignatureVersion', type: 'string' }
+          { name: 'AvEngineVersion', type: 'string' }
+          { name: 'AvPlatformVersion', type: 'string' }
+          { name: 'AvSignaturePublishTime', type: 'datetime' }
+          { name: 'AvSignatureDataRefreshTime', type: 'datetime' }
+          { name: 'SignatureAgeDays', type: 'int' }
+        ]
+      }
+      'Custom-DefenderAVDetections_CL': {
+        columns: [
+          { name: 'TimeGenerated', type: 'datetime' }
+          { name: 'ThreatName', type: 'string' }
+          { name: 'DetectionSource', type: 'string' }
+          { name: 'DetectionCount', type: 'int' }
+          { name: 'UniqueDevices', type: 'int' }
+          { name: 'RemediatedCount', type: 'int' }
+        ]
+      }
     }
     destinations: {
       logAnalytics: [
@@ -124,6 +173,30 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
         destinations: [ 'defender-dashboard-workspace' ]
         transformKql: 'source | extend TimeGenerated = now()'
         outputStream: 'Custom-DefenderRecommendations_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderASREvents_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderASREvents_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderProtectionState_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderProtectionState_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderAVOutdated_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderAVOutdated_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderAVDetections_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderAVDetections_CL'
       }
     ]
   }

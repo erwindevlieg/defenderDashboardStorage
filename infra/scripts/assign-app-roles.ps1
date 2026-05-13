@@ -26,6 +26,7 @@ $defenderRoles = @{
     'Alert.Read.All'                  = '71fe6b80-efef-4ac2-a530-00d4755b6c67'
     'SecurityRecommendation.Read.All' = '6443965c-7440-4abb-830f-f2f7be535ea0'
     'Software.Read.All'               = '37f71c98-d198-41ae-964d-d4e3dddea1e3'
+    'AdvancedQuery.Read.All'          = '93489bf5-0fbc-4f2d-b901-33f2fe08ff05'
 }
 
 # Microsoft Graph App Roles (alleen wat daadwerkelijk wordt gebruikt)

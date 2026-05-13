@@ -88,7 +88,7 @@ Het script wijst deze permissies toe:
 
 | API | Permissies |
 |---|---|
-| **Defender XDR** | Score.Read.All, Machine.Read.All, Vulnerability.Read.All, Alert.Read.All, SecurityRecommendation.Read.All, Software.Read.All |
+| **Defender XDR** | Score.Read.All, Machine.Read.All, Vulnerability.Read.All, Alert.Read.All, SecurityRecommendation.Read.All, Software.Read.All, AdvancedQuery.Read.All |
 | **Microsoft Graph** | SecurityEvents.Read.All, DeviceManagementManagedDevices.Read.All, DeviceManagementConfiguration.Read.All, DeviceManagementApps.Read.All |
 
 > ⚠️ Na het toewijzen kan het tot **1 uur** duren voordat tokens de nieuwe rollen bevatten.

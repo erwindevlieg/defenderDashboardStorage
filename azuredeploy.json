@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "6090383093983973384"
+      "templateHash": "12885454016371299896"
     }
   },
   "parameters": {
@@ -197,7 +197,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "8873948922268066201"
+              "templateHash": "1238930142838929725"
             }
           },
           "parameters": {
@@ -721,6 +721,210 @@
             {
               "type": "Microsoft.OperationalInsights/workspaces/tables",
               "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderASREvents_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderASREvents_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "RuleName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ActionType",
+                      "type": "string"
+                    },
+                    {
+                      "name": "EventCount",
+                      "type": "int"
+                    },
+                    {
+                      "name": "UniqueDevices",
+                      "type": "int"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderProtectionState_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderProtectionState_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "ConfigurationId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ConfigurationName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ConfigurationCategory",
+                      "type": "string"
+                    },
+                    {
+                      "name": "ConfigurationSubcategory",
+                      "type": "string"
+                    },
+                    {
+                      "name": "CompliantDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "NonCompliantDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "TotalDevices",
+                      "type": "int"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAVOutdated_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderAVOutdated_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "DeviceId",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DeviceName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "OSPlatform",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AvMode",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AvIsSignatureUpToDate",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AvIsEngineUpToDate",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AvIsPlatformUpToDate",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AvSignatureVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AvEngineVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AvPlatformVersion",
+                      "type": "string"
+                    },
+                    {
+                      "name": "AvSignaturePublishTime",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "AvSignatureDataRefreshTime",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "SignatureAgeDays",
+                      "type": "int"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
+              "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAVDetections_CL')]",
+              "properties": {
+                "plan": "Analytics",
+                "retentionInDays": 365,
+                "totalRetentionInDays": 730,
+                "schema": {
+                  "name": "DefenderAVDetections_CL",
+                  "columns": [
+                    {
+                      "name": "TimeGenerated",
+                      "type": "datetime"
+                    },
+                    {
+                      "name": "ThreatName",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DetectionSource",
+                      "type": "string"
+                    },
+                    {
+                      "name": "DetectionCount",
+                      "type": "int"
+                    },
+                    {
+                      "name": "UniqueDevices",
+                      "type": "int"
+                    },
+                    {
+                      "name": "RemediatedCount",
+                      "type": "int"
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces/tables",
+              "apiVersion": "2022-10-01",
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSoftwareInventory_CL')]",
               "properties": {
                 "plan": "Basic",
@@ -1012,7 +1216,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "16540591932088581127"
+              "templateHash": "6046651705835182360"
             }
           },
           "parameters": {
@@ -1192,6 +1396,154 @@
                         "type": "string"
                       }
                     ]
+                  },
+                  "Custom-DefenderASREvents_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "RuleName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ActionType",
+                        "type": "string"
+                      },
+                      {
+                        "name": "EventCount",
+                        "type": "int"
+                      },
+                      {
+                        "name": "UniqueDevices",
+                        "type": "int"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderProtectionState_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "ConfigurationId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ConfigurationName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ConfigurationCategory",
+                        "type": "string"
+                      },
+                      {
+                        "name": "ConfigurationSubcategory",
+                        "type": "string"
+                      },
+                      {
+                        "name": "CompliantDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "NonCompliantDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "TotalDevices",
+                        "type": "int"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderAVOutdated_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "DeviceId",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DeviceName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "OSPlatform",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AvMode",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AvIsSignatureUpToDate",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AvIsEngineUpToDate",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AvIsPlatformUpToDate",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AvSignatureVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AvEngineVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AvPlatformVersion",
+                        "type": "string"
+                      },
+                      {
+                        "name": "AvSignaturePublishTime",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "AvSignatureDataRefreshTime",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "SignatureAgeDays",
+                        "type": "int"
+                      }
+                    ]
+                  },
+                  "Custom-DefenderAVDetections_CL": {
+                    "columns": [
+                      {
+                        "name": "TimeGenerated",
+                        "type": "datetime"
+                      },
+                      {
+                        "name": "ThreatName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DetectionSource",
+                        "type": "string"
+                      },
+                      {
+                        "name": "DetectionCount",
+                        "type": "int"
+                      },
+                      {
+                        "name": "UniqueDevices",
+                        "type": "int"
+                      },
+                      {
+                        "name": "RemediatedCount",
+                        "type": "int"
+                      }
+                    ]
                   }
                 },
                 "destinations": {
@@ -1252,6 +1604,46 @@
                     ],
                     "transformKql": "source | extend TimeGenerated = now()",
                     "outputStream": "Custom-DefenderRecommendations_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderASREvents_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderASREvents_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderProtectionState_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderProtectionState_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderAVOutdated_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderAVOutdated_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderAVDetections_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderAVDetections_CL"
                   }
                 ]
               },
@@ -2707,7 +3099,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "16638703616665453730"
+              "templateHash": "11547152509544238511"
             }
           },
           "parameters": {
@@ -2746,7 +3138,7 @@
             }
           },
           "variables": {
-            "$fxv#0": "<#\r\n.SYNOPSIS\r\n    Wijst Defender XDR en Microsoft Graph app roles toe aan een Managed Identity.\r\n.DESCRIPTION\r\n    Dit script wordt uitgevoerd via een Bicep deploymentScript.\r\n    De identity die dit script uitvoert moet AppRoleAssignment.ReadWrite.All hebben.\r\n.PARAMETER ManagedIdentityPrincipalId\r\n    Object ID van de Managed Identity waaraan de app roles worden toegewezen.\r\n#>\r\nparam(\r\n    [Parameter(Mandatory = $true)]\r\n    [string]$ManagedIdentityPrincipalId\r\n)\r\n\r\n$ErrorActionPreference = 'Stop'\r\n\r\n# Well-known Service Principal App IDs\r\n$defenderAppId = 'fc780465-2017-40d4-a0c5-307022471b92'  # WindowsDefenderATP\r\n$graphAppId = '00000003-0000-0000-c000-000000000000'      # Microsoft Graph\r\n\r\n# WindowsDefenderATP App Roles (alleen wat daadwerkelijk wordt gebruikt)\r\n$defenderRoles = @{\r\n    'Score.Read.All'                  = '02b005dd-4237-4e38-b59f-fdb03dbb7e58'\r\n    'Machine.Read.All'                = 'ea8291d3-4b9a-44b5-bc3a-6cea3026dc79'\r\n    'Vulnerability.Read.All'          = '41269fc5-d04d-4bfd-bce7-43a51cea049a'\r\n    'Alert.Read.All'                  = '71fe6b80-efef-4ac2-a530-00d4755b6c67'\r\n    'SecurityRecommendation.Read.All' = '6443965c-7440-4abb-830f-f2f7be535ea0'\r\n    'Software.Read.All'               = '37f71c98-d198-41ae-964d-d4e3dddea1e3'\r\n}\r\n\r\n# Microsoft Graph App Roles (alleen wat daadwerkelijk wordt gebruikt)\r\n$graphRoles = @{\r\n    'SecurityEvents.Read.All'                        = 'bf394140-e372-4bf9-a898-299cfc7564e5'\r\n    'DeviceManagementManagedDevices.Read.All'         = '2f51be20-0bb4-4fed-bf7b-db946066c75e'\r\n    'DeviceManagementConfiguration.Read.All'          = 'dc377aa6-52d8-4e23-b271-b4ee8372acee'\r\n    'DeviceManagementApps.Read.All'                  = '7a6ee1e7-141e-4cec-ae74-d9db155731ff'\r\n}\r\n\r\nfunction Assign-AppRole {\r\n    param(\r\n        [string]$ServicePrincipalAppId,\r\n        [string]$AppRoleId,\r\n        [string]$AppRoleName,\r\n        [string]$PrincipalId\r\n    )\r\n\r\n    # Zoek de service principal op basis van appId\r\n    $sp = Get-MgServicePrincipal -Filter \"appId eq '$ServicePrincipalAppId'\" -Top 1\r\n\r\n    if (-not $sp) {\r\n        Write-Warning \"Service Principal met appId '$ServicePrincipalAppId' niet gevonden. Sla over.\"\r\n        return\r\n    }\r\n\r\n    # Controleer of de toewijzing al bestaat\r\n    $existing = Get-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $sp.Id |\r\n        Where-Object { $_.AppRoleId -eq $AppRoleId -and $_.PrincipalId -eq $PrincipalId }\r\n\r\n    if ($existing) {\r\n        Write-Output \"[OK] App role '$AppRoleName' is al toegewezen.\"\r\n        return\r\n    }\r\n\r\n    # Wijs de app role toe\r\n    $params = @{\r\n        PrincipalId = $PrincipalId\r\n        ResourceId  = $sp.Id\r\n        AppRoleId   = $AppRoleId\r\n    }\r\n\r\n    New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $PrincipalId -BodyParameter $params\r\n    Write-Output \"[OK] App role '$AppRoleName' succesvol toegewezen.\"\r\n}\r\n\r\n# Installeer Microsoft.Graph module als nodig\r\nif (-not (Get-Module -ListAvailable -Name Microsoft.Graph.Applications)) {\r\n    Install-Module Microsoft.Graph.Applications -Force -Scope CurrentUser -AllowClobber\r\n}\r\n\r\nImport-Module Microsoft.Graph.Applications\r\n\r\n# Connect via Managed Identity\r\nConnect-MgGraph -Identity\r\n\r\nWrite-Output \"=== WindowsDefenderATP App Roles ===\"\r\nforeach ($role in $defenderRoles.GetEnumerator()) {\r\n    Assign-AppRole -ServicePrincipalAppId $defenderAppId `\r\n                   -AppRoleId $role.Value `\r\n                   -AppRoleName $role.Key `\r\n                   -PrincipalId $ManagedIdentityPrincipalId\r\n}\r\n\r\nWrite-Output \"\"\r\nWrite-Output \"=== Microsoft Graph App Roles ===\"\r\nforeach ($role in $graphRoles.GetEnumerator()) {\r\n    Assign-AppRole -ServicePrincipalAppId $graphAppId `\r\n                   -AppRoleId $role.Value `\r\n                   -AppRoleName $role.Key `\r\n                   -PrincipalId $ManagedIdentityPrincipalId\r\n}\r\n\r\nWrite-Output \"\"\r\nWrite-Output \"Alle app role assignments voltooid.\"\r\n$DeploymentScriptOutputs = @{ status = 'success' }\r\n"
+            "$fxv#0": "<#\r\n.SYNOPSIS\r\n    Wijst Defender XDR en Microsoft Graph app roles toe aan een Managed Identity.\r\n.DESCRIPTION\r\n    Dit script wordt uitgevoerd via een Bicep deploymentScript.\r\n    De identity die dit script uitvoert moet AppRoleAssignment.ReadWrite.All hebben.\r\n.PARAMETER ManagedIdentityPrincipalId\r\n    Object ID van de Managed Identity waaraan de app roles worden toegewezen.\r\n#>\r\nparam(\r\n    [Parameter(Mandatory = $true)]\r\n    [string]$ManagedIdentityPrincipalId\r\n)\r\n\r\n$ErrorActionPreference = 'Stop'\r\n\r\n# Well-known Service Principal App IDs\r\n$defenderAppId = 'fc780465-2017-40d4-a0c5-307022471b92'  # WindowsDefenderATP\r\n$graphAppId = '00000003-0000-0000-c000-000000000000'      # Microsoft Graph\r\n\r\n# WindowsDefenderATP App Roles (alleen wat daadwerkelijk wordt gebruikt)\r\n$defenderRoles = @{\r\n    'Score.Read.All'                  = '02b005dd-4237-4e38-b59f-fdb03dbb7e58'\r\n    'Machine.Read.All'                = 'ea8291d3-4b9a-44b5-bc3a-6cea3026dc79'\r\n    'Vulnerability.Read.All'          = '41269fc5-d04d-4bfd-bce7-43a51cea049a'\r\n    'Alert.Read.All'                  = '71fe6b80-efef-4ac2-a530-00d4755b6c67'\r\n    'SecurityRecommendation.Read.All' = '6443965c-7440-4abb-830f-f2f7be535ea0'\r\n    'Software.Read.All'               = '37f71c98-d198-41ae-964d-d4e3dddea1e3'\r\n    'AdvancedQuery.Read.All'          = '93489bf5-0fbc-4f2d-b901-33f2fe08ff05'\r\n}\r\n\r\n# Microsoft Graph App Roles (alleen wat daadwerkelijk wordt gebruikt)\r\n$graphRoles = @{\r\n    'SecurityEvents.Read.All'                        = 'bf394140-e372-4bf9-a898-299cfc7564e5'\r\n    'DeviceManagementManagedDevices.Read.All'         = '2f51be20-0bb4-4fed-bf7b-db946066c75e'\r\n    'DeviceManagementConfiguration.Read.All'          = 'dc377aa6-52d8-4e23-b271-b4ee8372acee'\r\n    'DeviceManagementApps.Read.All'                  = '7a6ee1e7-141e-4cec-ae74-d9db155731ff'\r\n}\r\n\r\nfunction Assign-AppRole {\r\n    param(\r\n        [string]$ServicePrincipalAppId,\r\n        [string]$AppRoleId,\r\n        [string]$AppRoleName,\r\n        [string]$PrincipalId\r\n    )\r\n\r\n    # Zoek de service principal op basis van appId\r\n    $sp = Get-MgServicePrincipal -Filter \"appId eq '$ServicePrincipalAppId'\" -Top 1\r\n\r\n    if (-not $sp) {\r\n        Write-Warning \"Service Principal met appId '$ServicePrincipalAppId' niet gevonden. Sla over.\"\r\n        return\r\n    }\r\n\r\n    # Controleer of de toewijzing al bestaat\r\n    $existing = Get-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $sp.Id |\r\n        Where-Object { $_.AppRoleId -eq $AppRoleId -and $_.PrincipalId -eq $PrincipalId }\r\n\r\n    if ($existing) {\r\n        Write-Output \"[OK] App role '$AppRoleName' is al toegewezen.\"\r\n        return\r\n    }\r\n\r\n    # Wijs de app role toe\r\n    $params = @{\r\n        PrincipalId = $PrincipalId\r\n        ResourceId  = $sp.Id\r\n        AppRoleId   = $AppRoleId\r\n    }\r\n\r\n    New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $PrincipalId -BodyParameter $params\r\n    Write-Output \"[OK] App role '$AppRoleName' succesvol toegewezen.\"\r\n}\r\n\r\n# Installeer Microsoft.Graph module als nodig\r\nif (-not (Get-Module -ListAvailable -Name Microsoft.Graph.Applications)) {\r\n    Install-Module Microsoft.Graph.Applications -Force -Scope CurrentUser -AllowClobber\r\n}\r\n\r\nImport-Module Microsoft.Graph.Applications\r\n\r\n# Connect via Managed Identity\r\nConnect-MgGraph -Identity\r\n\r\nWrite-Output \"=== WindowsDefenderATP App Roles ===\"\r\nforeach ($role in $defenderRoles.GetEnumerator()) {\r\n    Assign-AppRole -ServicePrincipalAppId $defenderAppId `\r\n                   -AppRoleId $role.Value `\r\n                   -AppRoleName $role.Key `\r\n                   -PrincipalId $ManagedIdentityPrincipalId\r\n}\r\n\r\nWrite-Output \"\"\r\nWrite-Output \"=== Microsoft Graph App Roles ===\"\r\nforeach ($role in $graphRoles.GetEnumerator()) {\r\n    Assign-AppRole -ServicePrincipalAppId $graphAppId `\r\n                   -AppRoleId $role.Value `\r\n                   -AppRoleName $role.Key `\r\n                   -PrincipalId $ManagedIdentityPrincipalId\r\n}\r\n\r\nWrite-Output \"\"\r\nWrite-Output \"Alle app role assignments voltooid.\"\r\n$DeploymentScriptOutputs = @{ status = 'success' }\r\n"
           },
           "resources": [
             {

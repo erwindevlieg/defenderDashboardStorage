@@ -148,6 +148,14 @@ class PollingEngine:
         url = endpoint["url"]
         transform = endpoint.get("transform", "list")
 
+        if transform == "advancedHunting":
+            kql = endpoint.get("query", "")
+            if not kql:
+                logger.error("Geen 'query' veld voor advancedHunting endpoint %s", url)
+                return []
+            raw = await self._defender.run_advanced_query(kql)
+            return self._transform(raw, transform)
+
         if "securitycenter.microsoft.com" in scope:
             raw = await self._defender.fetch(url)
         else:
@@ -162,6 +170,11 @@ class PollingEngine:
 
         if transform == "single":
             return [raw] if isinstance(raw, dict) else []
+
+        if transform == "advancedHunting":
+            if isinstance(raw, dict):
+                return raw.get("Results", [])
+            return []
 
         if transform in ("list", "graphList", "exportList"):
             if isinstance(raw, dict):
