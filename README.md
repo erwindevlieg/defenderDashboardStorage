@@ -4,6 +4,18 @@ Platform for storing historical data from Microsoft Defender XDR and Intune APIs
 
 > 📚 **Full documentation lives in the [Wiki](https://github.com/erwindevlieg/defenderDashboardStorage/wiki).** This README only covers the quick start.
 
+## Not a replacement for Microsoft Sentinel
+
+**If you can use Microsoft Sentinel, use Sentinel.** Sentinel is the recommended, fully-supported path for long-term retention, detections, hunting and dashboards on top of Defender XDR and Intune data. It ships built-in connectors, analytics rules, UEBA, SOAR and workbooks that this project does not attempt to replicate.
+
+This project exists for the cases where Sentinel is not an option, for example:
+
+- Organisations that have decided — for cost, licensing or policy reasons — not to deploy Sentinel.
+- Environments where Sentinel is not yet available or cannot be deployed in the target tenant/region.
+- Teams (typically endpoint, workplace or service-management) that need historical Defender/Intune KPIs for their own dashboards but are not allowed access to the SOC's Sentinel workspace.
+
+In those scenarios this Function App polls the Defender XDR and Intune APIs and lands the data in a dedicated Log Analytics workspace (no Sentinel solution attached), so the consuming team owns its own data, retention and RBAC — without touching the SOC's environment.
+
 ## Quick start
 
 ### 1. Deploy
