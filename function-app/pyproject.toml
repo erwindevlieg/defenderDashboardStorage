@@ -3,8 +3,21 @@ line-length = 88
 target-version = "py311"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "SIM"]
-ignore = ["E501"]
+select = ["E", "F", "I", "B", "UP", "SIM", "D"]
+ignore = [
+    "E501",  # line length handled by formatter
+    "D203",  # incompatible with D211 (no blank line before class docstring)
+    "D213",  # incompatible with D212 (multi-line summary on first line)
+    "D104",  # missing docstring in public package (__init__.py)
+    "D107",  # missing docstring in __init__ (covered by class docstring)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+"function_app.py" = ["D"]  # Azure Functions entry stubs
 
 [tool.mypy]
 python_version = "3.11"
@@ -20,3 +33,20 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[tool.interrogate]
+# Docstring coverage on the public polling API. Tests/__init__/magic skipped.
+fail-under = 80
+verbose = 1
+quiet = false
+color = true
+ignore-init-method = true
+ignore-init-module = true
+ignore-magic = true
+ignore-private = true
+ignore-property-decorators = true
+ignore-module = false
+ignore-nested-functions = true
+ignore-nested-classes = true
+ignore-setters = false
+exclude = ["tests", ".venv", "build", "dist"]

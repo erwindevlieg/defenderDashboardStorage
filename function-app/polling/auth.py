@@ -66,9 +66,10 @@ class TokenCache:
 
             logger.debug("Token cache miss/refresh voor scope %s", self._scope)
             access_token = self._credential.get_token(self._scope)
-            self._token = access_token.token  # type: ignore[attr-defined]
+            token: str = access_token.token  # type: ignore[attr-defined]
+            self._token = token
             self._expires_on = float(access_token.expires_on)  # type: ignore[attr-defined]
-            return self._token
+            return token
 
     def invalidate(self) -> None:
         """Forceer een refresh bij de volgende `get()`."""

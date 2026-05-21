@@ -1,0 +1,60 @@
+# Pre-commit hooks — single source of truth for lint checks.
+# CI runs `pre-commit run --all-files` so local and CI verdicts cannot diverge.
+# Install: pip install -r function-app/requirements-dev.txt && pre-commit install
+# Run all: pre-commit run --all-files
+# Hook repos are pinned to commit SHAs (tags are mutable) — supply-chain hygiene.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+        exclude: ^azuredeploy\.json$
+      - id: trailing-whitespace
+        exclude: ^azuredeploy\.json$
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: f0b5944bef86f50d875305821a0ab0d8c601e465  # v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^function-app/
+      - id: ruff-format
+        files: ^function-app/
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: f56614daa94d5cd733d3b7004c5df9caad267b4a  # v1.13.0
+    hooks:
+      - id: mypy
+        files: ^function-app/polling/
+        args: [--config-file=function-app/pyproject.toml]
+        additional_dependencies:
+          - azure-functions
+          - azure-identity
+          - azure-core
+          - azure-monitor-ingestion
+          - azure-appconfiguration
+          - azure-data-tables
+          - aiohttp
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: 81e9f98ffd059efe8aa9c1b1a42e5cce61b640c6  # v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-c, .yamllint.yml]
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: 5e920a94ae1997fdd4efb48dfb4b36b950b24903  # v0.15.0
+    hooks:
+      - id: markdownlint-cli2
+
+  - repo: https://github.com/econchick/interrogate
+    rev: a6268877efd41a21197445cc04cbf28f9c6facba  # 1.7.0
+    hooks:
+      - id: interrogate
+        args: [--config=function-app/pyproject.toml, function-app/polling]
+        pass_filenames: false

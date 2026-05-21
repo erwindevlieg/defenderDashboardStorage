@@ -75,9 +75,11 @@ class FailedEndpointStore:
         table_name: str | None = None,
     ) -> None:
         self._credential = credential
-        self._account = account_name or os.environ.get("STATE_STORAGE_ACCOUNT", "")
-        self._table = table_name or os.environ.get(
-            "STATE_TABLE_NAME", "FailedEndpoints"
+        self._account: str = (
+            account_name or os.environ.get("STATE_STORAGE_ACCOUNT") or ""
+        )
+        self._table: str = (
+            table_name or os.environ.get("STATE_TABLE_NAME") or "FailedEndpoints"
         )
         self._client = (
             _build_table_client(credential, self._account, self._table)
@@ -87,6 +89,7 @@ class FailedEndpointStore:
 
     @property
     def enabled(self) -> bool:
+        """Return whether persistence is active (Table client built successfully)."""
         return self._client is not None
 
     def load(self, schedule: str, ttl_seconds: int) -> list[tuple[float, dict]]:

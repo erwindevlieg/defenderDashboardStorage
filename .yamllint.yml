@@ -1,0 +1,9 @@
+# Relaxed config: tolerate cross-platform line endings and longer lines.
+# Strict checks: syntax, duplicate keys, indentation.
+extends: relaxed
+
+rules:
+  new-lines: disable           # CRLF tolerated (Windows checkouts)
+  line-length: disable         # Long action SHAs / globs are fine
+  truthy:
+    check-keys: false          # GitHub Actions `on:` key is YAML-spec truthy

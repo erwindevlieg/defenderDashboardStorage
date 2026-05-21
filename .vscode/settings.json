@@ -1,0 +1,21 @@
+{
+    "azureFunctions.deploySubpath": "function-app",
+    "azureFunctions.scmDoBuildDuringDeployment": true,
+    "azureFunctions.projectLanguage": "Python",
+    "azureFunctions.projectRuntime": "~4",
+    "debug.internalConsoleOptions": "neverOpen",
+    "azureFunctions.projectLanguageModel": 2,
+    "python.defaultInterpreterPath": "${workspaceFolder}/function-app/.venv/Scripts/python.exe",
+    "python.analysis.extraPaths": ["${workspaceFolder}/function-app"],
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
+    },
+    "ruff.configuration": "${workspaceFolder}/function-app/pyproject.toml",
+    "mypy-type-checker.cwd": "${workspaceFolder}/function-app",
+    "mypy-type-checker.args": ["--config-file=${workspaceFolder}/function-app/pyproject.toml"]
+}

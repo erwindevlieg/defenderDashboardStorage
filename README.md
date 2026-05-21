@@ -13,7 +13,7 @@ Maak eerst een resource group aan (bijv. `rg-defender-dashboard` in `West Europe
 ### Stap 2 — Wat moet ik invullen?
 
 | Parameter | Wat invullen | Verplicht |
-|---|---|---|
+| --- | --- | --- |
 | `resourceToken` | Kort uniek token voor resource namen, bijv. `prod01` (3-10 tekens) | ✅ |
 | `location` | Azure regio — standaard de locatie van je resource group | |
 | `repoUrl` | URL van je fork/clone, bijv. `https://github.com/jouw-user/defenderDashboardStorage` — dan wordt de Python code automatisch gedeployed | |
@@ -27,7 +27,7 @@ Maak eerst een resource group aan (bijv. `rg-defender-dashboard` in `West Europe
 De knop deployt de **volledige infrastructuur** in één keer:
 
 | Wat | Resource | Automatisch? |
-|---|---|---|
+| --- | --- | --- |
 | Managed Identity | `uai-defender-dashboard-<token>` | ✅ Altijd |
 | Log Analytics Workspace | `law-defender-dashboard-<token>` met 14 custom tabellen | ✅ Altijd |
 | Data Collection Endpoint + 3 DCRs | Data-ingestie pipeline | ✅ Altijd |
@@ -87,7 +87,7 @@ $uamiPrincipalId = (az identity show `
 Het script wijst deze permissies toe:
 
 | API | Permissies |
-|---|---|
+| --- | --- |
 | **Defender XDR** | Score.Read.All, Machine.Read.All, Vulnerability.Read.All, Alert.Read.All, SecurityRecommendation.Read.All, Software.Read.All, AdvancedQuery.Read.All |
 | **Microsoft Graph** | SecurityEvents.Read.All, DeviceManagementManagedDevices.Read.All, DeviceManagementConfiguration.Read.All, DeviceManagementApps.Read.All |
 
@@ -108,7 +108,7 @@ Na alle stappen:
 ## Troubleshooting
 
 | Symptoom | Oorzaak | Oplossing |
-|---|---|---|
+| --- | --- | --- |
 | `403 Forbidden` op Defender of Graph endpoints | App roles nog niet actief of niet toegewezen | Wacht tot 1 uur na toewijzing; verifieer via `Get-MgServicePrincipalAppRoleAssignment` |
 | `429 Too Many Requests` herhaaldelijk in logs | Tenant-wide throttling | Engine retried automatisch met jitter; bij aanhoudend throttlen: verlaag run-frequentie of verminder endpoints per run |
 | Records ontbreken stilzwijgend in Log Analytics-tabel | Stream-schema in DCR ≠ tabel-schema | Voeg `expected_columns` toe aan endpoint en check Application Insights op `Schema-mismatch` warnings |
@@ -138,7 +138,7 @@ traces
 
 ## Architectuur
 
-```
+```text
 ┌─────────────────┐     ┌───────────────────┐     ┌────────────────────┐
 │  Defender XDR    │────▶│   Function App    │────▶│  Log Analytics     │
 │  Graph API       │     │   (Python 3.11)   │     │  Workspace         │
@@ -170,22 +170,32 @@ Daarna `azuredeploy.json` hercompileren en opnieuw deployen. Zie [docs/adding-co
 ```bash
 cd function-app
 
-# Dependencies installeren
-pip install -r requirements.txt
+# Dev dependencies installeren (lint, test, doc coverage)
+pip install -r requirements-dev.txt
+
+# Pre-commit hooks activeren (ruff, markdownlint, interrogate, ...)
+# Vanuit repo-root:
+cd ..
+pre-commit install
 
 # Tests draaien
-pip install pytest pytest-asyncio
+cd function-app
 pytest tests/ -v
 
-# Linting
-pip install ruff
+# Handmatig lint
 ruff check .
 ruff format --check .
+mypy polling
+interrogate -v polling
+
+# Alle hooks ineens (markdown, yaml, python) over de hele repo:
+cd ..
+pre-commit run --all-files
 ```
 
 ## Projectstructuur
 
-```
+```text
 infra/                — Bicep modules (infrastructuur)
   modules/            — Kern-modules (workspace, dcr, function-app, etc.)
   scripts/            — Bootstrap scripts (app role assignments)

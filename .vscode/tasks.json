@@ -1,0 +1,39 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "func",
+			"label": "func: host start",
+			"command": "host start",
+			"problemMatcher": "$func-python-watch",
+			"isBackground": true,
+			"options": {
+				"cwd": "${workspaceFolder}/function-app"
+			}
+		},
+		{
+			"label": "lint: all",
+			"type": "shell",
+			"command": "pre-commit run --all-files",
+			"problemMatcher": [],
+			"group": { "kind": "test", "isDefault": false },
+			"detail": "Run every lint hook (ruff, markdownlint, interrogate, ...) over the full repo."
+		},
+		{
+			"label": "lint: python",
+			"type": "shell",
+			"command": "ruff check . ; ruff format --check . ; mypy polling",
+			"options": { "cwd": "${workspaceFolder}/function-app" },
+			"problemMatcher": [],
+			"detail": "Ruff lint + format check + mypy on the polling package."
+		},
+		{
+			"label": "test: pytest",
+			"type": "shell",
+			"command": "pytest tests/ -q",
+			"options": { "cwd": "${workspaceFolder}/function-app" },
+			"problemMatcher": [],
+			"group": { "kind": "test", "isDefault": true }
+		}
+	]
+}

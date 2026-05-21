@@ -9,7 +9,7 @@ Dit document beschrijft de stappen om het platform operationeel te maken. De Dep
 ## Vereisten
 
 | Wat | Waarom |
-|---|---|
+| --- | --- |
 | Azure subscription met Contributor-rechten | Resources aanmaken |
 | Privileged Role Administrator (of Global Admin) | API-permissies toewijzen aan de Managed Identity |
 | [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) | Handmatige commando's uitvoeren |
@@ -30,9 +30,11 @@ Klik op de knop in de [README](../README.md) of gebruik de directe link:
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ferwindevlieg%2FdefenderDashboardStorage%2Fmain%2Fazuredeploy.json)
 
 **Minimaal invullen:**
+
 - `resourceToken` — bijv. `prod01`
 
 **Aanbevolen ook invullen:**
+
 - `repoUrl` — URL van je fork/clone, zodat de Function App code automatisch mee-deployed wordt
 
 Zie de [README](../README.md) voor een beschrijving van alle parameters.
@@ -78,6 +80,7 @@ Write-Output "Principal ID: $uamiPrincipalId"
 Het script wijst automatisch alle benodigde permissies toe:
 
 **Defender XDR (WindowsDefenderATP):**
+
 - `Score.Read.All` — Secure Score en Exposure Score
 - `Machine.Read.All` — Device inventory en AV health
 - `Vulnerability.Read.All` — Kwetsbaarheden en secure config
@@ -87,6 +90,7 @@ Het script wijst automatisch alle benodigde permissies toe:
 - `AdvancedQuery.Read.All` — Advanced Hunting queries (AV status, ASR events, protection state)
 
 **Microsoft Graph:**
+
 - `SecurityEvents.Read.All` — Secure Scores (via Graph)
 - `DeviceManagementManagedDevices.Read.All` — Intune devices
 - `DeviceManagementConfiguration.Read.All` — Intune compliance
@@ -109,6 +113,7 @@ Open Azure Portal → Log Analytics Workspace → Tables. Je zou 14 tabellen moe
 ### Eerste data ophalen
 
 De Function App draait automatisch op schema:
+
 - **Dagelijks 06:00 UTC** — scores, alerts, kwetsbaarheden
 - **Wekelijks zondag 02:00 UTC** — device inventory, software, Intune
 
@@ -119,8 +124,9 @@ De Function App draait automatisch op schema:
 Azure Portal → Application Insights → Failures
 
 Veelvoorkomende fouten:
+
 | Fout | Oorzaak | Oplossing |
-|---|---|---|
+| --- | --- | --- |
 | `403 Forbidden` | App roles nog niet actief | Wacht tot 1 uur na stap 3 |
 | `401 Unauthorized` | Managed Identity niet gekoppeld | Controleer Function App → Identity |
 | Geen data na 24u | Timer niet actief | Controleer Function App → Functions |
