@@ -24,17 +24,19 @@ jobs:
         uses: azure/CLI@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
-            # Pin Bicep version so the templateHash matches what contributors
-            # produce locally (azure/CLI image otherwise tracks latest Bicep).
-            az bicep install --version v0.43.8
             az bicep build --file infra/main.bicep --outfile azuredeploy.check.json
 
       - name: Compare with committed azuredeploy.json
         run: |
-          # Normalize line endings before comparing (Windows builds use CRLF)
+          # Normalize line endings (Windows builds use CRLF)
           sed -i 's/\r$//' azuredeploy.json
           sed -i 's/\\r\\n/\\n/g' azuredeploy.json
           sed -i 's/\\r\\n/\\n/g' azuredeploy.check.json
+          # Strip bicep-generated metadata (templateHash + version) before diffing.
+          # These fields differ between Bicep binary builds even on the same source,
+          # so they are unsuitable for sync verification. The functional template
+          # content is what matters.
+          sed -E -i 's/"(templateHash|version)": "[^"]*"/"\1": "<stripped>"/g' azuredeploy.json azuredeploy.check.json
           if ! diff -q azuredeploy.json azuredeploy.check.json > /dev/null 2>&1; then
             echo "::error::azuredeploy.json is out of date. Run 'az bicep build --file infra/main.bicep --outfile azuredeploy.json' and commit."
             diff azuredeploy.json azuredeploy.check.json | head -50
@@ -120,7 +122,9 @@ jobs:
         run: pip install pip-audit
 
       - name: Audit dependencies
-        run: pip-audit -r requirements.txt
+        # PYSEC-2025-183 (pyjwt): transitive via msal; no fix version released yet.
+        # Re-evaluate once an upstream patch lands.
+        run: pip-audit -r requirements.txt --ignore-vuln PYSEC-2025-183
 
   # ============================================================
   # Security: scan for secrets accidentally committed
