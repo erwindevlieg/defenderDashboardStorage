@@ -15,6 +15,7 @@ import os
 import time
 import uuid
 from typing import Any
+from urllib.parse import urlparse
 
 from azure.appconfiguration import AzureAppConfigurationClient
 from azure.identity import DefaultAzureCredential
@@ -423,7 +424,11 @@ class PollingEngine:
             raw = await self._defender.run_advanced_query(kql)
             return self._transform(raw, transform)
 
-        if "securitycenter.microsoft.com" in scope:
+        parsed_scope = urlparse(scope if "://" in scope else f"https://{scope}")
+        scope_host = (parsed_scope.hostname or "").lower()
+        is_defender_scope = scope_host == "securitycenter.microsoft.com"
+
+        if is_defender_scope:
             raw = await self._defender.fetch(url)
         else:
             raw = await self._graph.fetch(url)
