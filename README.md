@@ -41,6 +41,21 @@ The dashboard's Managed Identity also needs **app-role grants** on Microsoft Gra
 
 > Tip: in enterprise environments it is usually worth creating a one-off "ddash-bootstrap" UAMI with `AppRoleAssignment.ReadWrite.All` and reusing its Resource ID for every future deploy.
 
+#### Pre-create the bootstrap UAMI (one-time, optional)
+
+To enable the **Automatic** path above you first need a UAMI that holds `AppRoleAssignment.ReadWrite.All` on Microsoft Graph. The helper script [`infra/scripts/create-bootstrap-identity.ps1`](infra/scripts/create-bootstrap-identity.ps1) does this end-to-end — create the resource group, create the UAMI, and grant the Graph app role:
+
+```powershell
+# Run once, signed in as Global Administrator (or Privileged Role Administrator).
+# az login   # against the target tenant/subscription first
+./infra/scripts/create-bootstrap-identity.ps1 `
+    -ResourceGroup rg-ddash-bootstrap `
+    -IdentityName  id-ddash-bootstrap `
+    -Location      westeurope
+```
+
+The script prints the UAMI's Resource ID. Paste that value into the `scriptRunnerIdentityId` field of every Deploy-to-Azure deployment from then on.
+
 ### 3. Verify
 
 Trigger the function manually and check Log Analytics for `_CL` tables. Details in **[Wiki → Runbook](https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Runbook)**.
