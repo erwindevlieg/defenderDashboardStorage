@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "15081559424488972"
+      "templateHash": "8504839288842144627"
     }
   },
   "parameters": {
@@ -238,7 +238,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "15482061558571221961"
+              "templateHash": "4847735081124644765"
             }
           },
           "parameters": {
@@ -277,6 +277,69 @@
               "metadata": {
                 "description": "Retention in days for the workspace (default 90, CIS 5.3.1 minimum)"
               }
+            },
+            "scoreInteractiveRetentionDays": {
+              "type": "int",
+              "defaultValue": 730,
+              "minValue": 30,
+              "maxValue": 730,
+              "metadata": {
+                "description": "Interactive retention for score tables (Exposure / Secure / Configuration). Default 730 (2 years)."
+              }
+            },
+            "scoreArchiveRetentionDays": {
+              "type": "int",
+              "defaultValue": 2556,
+              "minValue": 30,
+              "maxValue": 4383,
+              "metadata": {
+                "description": "Total retention (interactive + archive) for score tables. Default 2556 (7 years)."
+              }
+            },
+            "analyticsInteractiveRetentionDays": {
+              "type": "int",
+              "defaultValue": 365,
+              "minValue": 30,
+              "maxValue": 730,
+              "metadata": {
+                "description": "Interactive retention for Analytics inventory and archive tables. Default 365 (1 year)."
+              }
+            },
+            "analyticsArchiveRetentionDays": {
+              "type": "int",
+              "defaultValue": 1826,
+              "minValue": 30,
+              "maxValue": 4383,
+              "metadata": {
+                "description": "Total retention for long-archive Analytics tables (SecureScoreControls, AlertAggregates, Recommendations). Default 1826 (5 years)."
+              }
+            },
+            "inventoryArchiveRetentionDays": {
+              "type": "int",
+              "defaultValue": 730,
+              "minValue": 30,
+              "maxValue": 4383,
+              "metadata": {
+                "description": "Total retention for standard Analytics inventory tables. Default 730 (2 years)."
+              }
+            },
+            "basicRetentionDays": {
+              "type": "int",
+              "defaultValue": 730,
+              "minValue": 30,
+              "maxValue": 4383,
+              "metadata": {
+                "description": "Total retention for Basic tables. Default 730 (2 years)."
+              }
+            },
+            "basicAppsRetentionDays": {
+              "type": "int",
+              "defaultValue": 365,
+              "minValue": 30,
+              "maxValue": 4383,
+              "metadata": {
+                "description": "Total retention for short-lived Basic tables (Intune detected apps). Default 365 (1 year)."
+              }
             }
           },
           "resources": [
@@ -311,7 +374,7 @@
               "name": "[format('lock-{0}', parameters('workspaceName'))]",
               "properties": {
                 "level": "CanNotDelete",
-                "notes": "Log Analytics workspace mag niet verwijderd worden zonder expliciete goedkeuring."
+                "notes": "Log Analytics workspace must not be deleted without explicit approval."
               },
               "dependsOn": [
                 "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
@@ -323,8 +386,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderExposureScore_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 730,
-                "totalRetentionInDays": 2556,
+                "retentionInDays": "[parameters('scoreInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('scoreArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderExposureScore_CL",
                   "columns": [
@@ -349,8 +412,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSecureScore_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 730,
-                "totalRetentionInDays": 2556,
+                "retentionInDays": "[parameters('scoreInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('scoreArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderSecureScore_CL",
                   "columns": [
@@ -383,8 +446,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSecureScoreControls_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 1826,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('analyticsArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderSecureScoreControls_CL",
                   "columns": [
@@ -437,8 +500,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderConfigurationScore_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 730,
-                "totalRetentionInDays": 2556,
+                "retentionInDays": "[parameters('scoreInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('scoreArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderConfigurationScore_CL",
                   "columns": [
@@ -463,8 +526,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAlertAggregates_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 1826,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('analyticsArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderAlertAggregates_CL",
                   "columns": [
@@ -509,8 +572,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderRecommendations_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 1826,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('analyticsArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderRecommendations_CL",
                   "columns": [
@@ -575,8 +638,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderDeviceInventory_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 730,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('inventoryArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderDeviceInventory_CL",
                   "columns": [
@@ -665,8 +728,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAVHealth_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 730,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('inventoryArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderAVHealth_CL",
                   "columns": [
@@ -727,8 +790,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderVulnDelta_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 730,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('inventoryArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderVulnDelta_CL",
                   "columns": [
@@ -785,8 +848,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'IntuneDevices_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 730,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('inventoryArchiveRetentionDays')]",
                 "schema": {
                   "name": "IntuneDevices_CL",
                   "columns": [
@@ -867,8 +930,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderASREvents_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 730,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('inventoryArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderASREvents_CL",
                   "columns": [
@@ -905,8 +968,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderProtectionState_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 730,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('inventoryArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderProtectionState_CL",
                   "columns": [
@@ -955,8 +1018,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAVOutdated_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 730,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('inventoryArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderAVOutdated_CL",
                   "columns": [
@@ -1029,8 +1092,8 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderAVDetections_CL')]",
               "properties": {
                 "plan": "Analytics",
-                "retentionInDays": 365,
-                "totalRetentionInDays": 730,
+                "retentionInDays": "[parameters('analyticsInteractiveRetentionDays')]",
+                "totalRetentionInDays": "[parameters('inventoryArchiveRetentionDays')]",
                 "schema": {
                   "name": "DefenderAVDetections_CL",
                   "columns": [
@@ -1071,7 +1134,7 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSoftwareInventory_CL')]",
               "properties": {
                 "plan": "Basic",
-                "totalRetentionInDays": 730,
+                "totalRetentionInDays": "[parameters('basicRetentionDays')]",
                 "schema": {
                   "name": "DefenderSoftwareInventory_CL",
                   "columns": [
@@ -1120,7 +1183,7 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderSecureConfig_CL')]",
               "properties": {
                 "plan": "Basic",
-                "totalRetentionInDays": 730,
+                "totalRetentionInDays": "[parameters('basicRetentionDays')]",
                 "schema": {
                   "name": "DefenderSecureConfig_CL",
                   "columns": [
@@ -1173,7 +1236,7 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'DefenderDeviceSoftware_CL')]",
               "properties": {
                 "plan": "Basic",
-                "totalRetentionInDays": 730,
+                "totalRetentionInDays": "[parameters('basicRetentionDays')]",
                 "schema": {
                   "name": "DefenderDeviceSoftware_CL",
                   "columns": [
@@ -1222,7 +1285,7 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'IntuneDetectedApps_CL')]",
               "properties": {
                 "plan": "Basic",
-                "totalRetentionInDays": 365,
+                "totalRetentionInDays": "[parameters('basicAppsRetentionDays')]",
                 "schema": {
                   "name": "IntuneDetectedApps_CL",
                   "columns": [
@@ -1259,7 +1322,7 @@
               "name": "[format('{0}/{1}', parameters('workspaceName'), 'IntuneComplianceReports_CL')]",
               "properties": {
                 "plan": "Basic",
-                "totalRetentionInDays": 730,
+                "totalRetentionInDays": "[parameters('basicRetentionDays')]",
                 "schema": {
                   "name": "IntuneComplianceReports_CL",
                   "columns": [

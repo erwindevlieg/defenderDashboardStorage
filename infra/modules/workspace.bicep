@@ -1,6 +1,35 @@
 // ============================================================
-// workspace.bicep — Log Analytics Workspace + Custom Tabellen
+// workspace.bicep — Log Analytics Workspace + Custom Tables
 // ============================================================
+//
+// Table plan & retention decision matrix
+// --------------------------------------
+// Analytics plan is used for tables that are queried interactively from
+// dashboards or joined across tables. It is more expensive per GB but
+// supports the full KQL surface and shorter query latency.
+//
+// Basic plan is used for high-volume tables that are queried infrequently
+// (forensics / inventory snapshots / aggregations done elsewhere). Lower
+// ingest cost, restricted query surface, and a fixed 30-day interactive
+// window before data ages into archive.
+//
+// Retention tiers (interactive / total):
+//   * Scores (Exposure, Secure, Configuration)     — 730 / 2556 (2y / 7y)
+//     Trend data; small volume; long history is the whole point.
+//   * Long archive analytics                       — 365 / 1826 (1y / 5y)
+//     SecureScoreControls, AlertAggregates, Recommendations — moderate
+//     volume, used in compliance / audit reviews.
+//   * Standard analytics inventory                 — 365 /  730 (1y / 2y)
+//     DeviceInventory, AVHealth, VulnDelta, IntuneDevices, ASREvents,
+//     ProtectionState, AVOutdated, AVDetections — high enough volume to
+//     justify the shorter archive window.
+//   * Basic tables                                 —  30 /  730 (basic)
+//     SoftwareInventory, SecureConfig, DeviceSoftware, IntuneCompliance.
+//   * Basic short                                  —  30 /  365 (basic)
+//     IntuneDetectedApps — volatile, low historical value.
+//
+// All retention windows are exposed as parameters so a deployer can dial
+// them down once cost-baseline KQL on each `_CL` table is in hand.
 
 @description('Location for all resources')
 param location string = resourceGroup().location
@@ -19,6 +48,41 @@ param dailyQuotaGb int = 10
 @maxValue(730)
 param retentionInDays int = 90
 
+@description('Interactive retention for score tables (Exposure / Secure / Configuration). Default 730 (2 years).')
+@minValue(30)
+@maxValue(730)
+param scoreInteractiveRetentionDays int = 730
+
+@description('Total retention (interactive + archive) for score tables. Default 2556 (7 years).')
+@minValue(30)
+@maxValue(4383)
+param scoreArchiveRetentionDays int = 2556
+
+@description('Interactive retention for Analytics inventory and archive tables. Default 365 (1 year).')
+@minValue(30)
+@maxValue(730)
+param analyticsInteractiveRetentionDays int = 365
+
+@description('Total retention for long-archive Analytics tables (SecureScoreControls, AlertAggregates, Recommendations). Default 1826 (5 years).')
+@minValue(30)
+@maxValue(4383)
+param analyticsArchiveRetentionDays int = 1826
+
+@description('Total retention for standard Analytics inventory tables. Default 730 (2 years).')
+@minValue(30)
+@maxValue(4383)
+param inventoryArchiveRetentionDays int = 730
+
+@description('Total retention for Basic tables. Default 730 (2 years).')
+@minValue(30)
+@maxValue(4383)
+param basicRetentionDays int = 730
+
+@description('Total retention for short-lived Basic tables (Intune detected apps). Default 365 (1 year).')
+@minValue(30)
+@maxValue(4383)
+param basicAppsRetentionDays int = 365
+
 // ============================================================
 // Workspace
 // ============================================================
@@ -35,9 +99,9 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
     }
 
     features: {
-      disableLocalAuth: true // Alleen Entra ID auth
-      enableLogAccessUsingOnlyResourcePermissions: false // Workspace-only modus (ABAC)
-      enableDataExport: false // Voorkom onbedoelde data-export
+      disableLocalAuth: true // Entra ID auth only
+      enableLogAccessUsingOnlyResourcePermissions: false // Workspace-only mode (ABAC)
+      enableDataExport: false // Prevent accidental data export
       immediatePurgeDataOn30Days: false
     }
 
@@ -46,26 +110,26 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   }
 }
 
-// Verwijder-vergrendeling
+// Delete lock
 resource workspaceLock 'Microsoft.Authorization/locks@2020-05-01' = {
   name: 'lock-${workspace.name}'
   scope: workspace
   properties: {
     level: 'CanNotDelete'
-    notes: 'Log Analytics workspace mag niet verwijderd worden zonder expliciete goedkeuring.'
+    notes: 'Log Analytics workspace must not be deleted without explicit approval.'
   }
 }
 
 // ============================================================
-// Custom Tabellen — Analytics Plan (dashboard queries)
+// Custom tables — Analytics plan (dashboard queries)
 // ============================================================
 resource tableExposureScore 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderExposureScore_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 730 // 2 jaar interactief
-    totalRetentionInDays: 2556 // 7 jaar totaal
+    retentionInDays: scoreInteractiveRetentionDays
+    totalRetentionInDays: scoreArchiveRetentionDays
     schema: {
       name: 'DefenderExposureScore_CL'
       columns: [
@@ -81,8 +145,8 @@ resource tableSecureScore 'Microsoft.OperationalInsights/workspaces/tables@2022-
   name: 'DefenderSecureScore_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 730
-    totalRetentionInDays: 2556
+    retentionInDays: scoreInteractiveRetentionDays
+    totalRetentionInDays: scoreArchiveRetentionDays
     schema: {
       name: 'DefenderSecureScore_CL'
       columns: [
@@ -95,14 +159,14 @@ resource tableSecureScore 'Microsoft.OperationalInsights/workspaces/tables@2022-
   }
 }
 
-// SecureScoreControls: Analytics — welke controls bijdragen aan de Secure Score
+// SecureScoreControls: Analytics — which controls contribute to the Secure Score
 resource tableSecureScoreControls 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderSecureScoreControls_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 1826
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: analyticsArchiveRetentionDays
     schema: {
       name: 'DefenderSecureScoreControls_CL'
       columns: [
@@ -125,8 +189,8 @@ resource tableConfigScore 'Microsoft.OperationalInsights/workspaces/tables@2022-
   name: 'DefenderConfigurationScore_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 730
-    totalRetentionInDays: 2556
+    retentionInDays: scoreInteractiveRetentionDays
+    totalRetentionInDays: scoreArchiveRetentionDays
     schema: {
       name: 'DefenderConfigurationScore_CL'
       columns: [
@@ -142,8 +206,8 @@ resource tableAlertAggregates 'Microsoft.OperationalInsights/workspaces/tables@2
   name: 'DefenderAlertAggregates_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 1826 // 5 jaar
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: analyticsArchiveRetentionDays
     schema: {
       name: 'DefenderAlertAggregates_CL'
       columns: [
@@ -164,8 +228,8 @@ resource tableRecommendations 'Microsoft.OperationalInsights/workspaces/tables@2
   name: 'DefenderRecommendations_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 1826
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: analyticsArchiveRetentionDays
     schema: {
       name: 'DefenderRecommendations_CL'
       columns: [
@@ -180,24 +244,24 @@ resource tableRecommendations 'Microsoft.OperationalInsights/workspaces/tables@2
         { name: 'Vendor', type: 'string' }
         { name: 'ProductName', type: 'string' }
         { name: 'SubCategory', type: 'string' }
-        { name: 'RelatedSoftwareId', type: 'string' } // Join met SoftwareInventory
+        { name: 'RelatedSoftwareId', type: 'string' } // Join with SoftwareInventory
       ]
     }
   }
 }
 
 // ============================================================
-// Custom Tabellen — Analytics Plan (dashboard queries + joins)
+// Custom tables — Analytics plan (dashboard queries + joins)
 // ============================================================
 
-// DeviceInventory: Analytics — wordt gejoind met AVHealth, VulnDelta, IntuneDevices
+// DeviceInventory: Analytics — joined with AVHealth, VulnDelta, IntuneDevices
 resource tableDeviceInventory 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderDeviceInventory_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 730
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: inventoryArchiveRetentionDays
     schema: {
       name: 'DefenderDeviceInventory_CL'
       columns: [
@@ -224,14 +288,14 @@ resource tableDeviceInventory 'Microsoft.OperationalInsights/workspaces/tables@2
   }
 }
 
-// AVHealth: Analytics — join met DeviceInventory voor AV status per device
+// AVHealth: Analytics — join with DeviceInventory for per-device AV status
 resource tableAVHealth 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderAVHealth_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 730
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: inventoryArchiveRetentionDays
     schema: {
       name: 'DefenderAVHealth_CL'
       columns: [
@@ -251,14 +315,14 @@ resource tableAVHealth 'Microsoft.OperationalInsights/workspaces/tables@2022-10-
   }
 }
 
-// VulnDelta: Analytics — join met DeviceInventory voor vulns per device
+// VulnDelta: Analytics — join with DeviceInventory for per-device vulnerabilities
 resource tableVulnDelta 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderVulnDelta_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 730
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: inventoryArchiveRetentionDays
     schema: {
       name: 'DefenderVulnDelta_CL'
       columns: [
@@ -277,14 +341,14 @@ resource tableVulnDelta 'Microsoft.OperationalInsights/workspaces/tables@2022-10
   }
 }
 
-// IntuneDevices: Analytics — join met DeviceInventory via AadDeviceId
+// IntuneDevices: Analytics — join with DeviceInventory via AadDeviceId
 resource tableIntuneDevices 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'IntuneDevices_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 730
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: inventoryArchiveRetentionDays
     schema: {
       name: 'IntuneDevices_CL'
       columns: [
@@ -309,14 +373,14 @@ resource tableIntuneDevices 'Microsoft.OperationalInsights/workspaces/tables@202
   }
 }
 
-// ASR Events: Analytics — dagelijks aggregaat van ASR blocks/audits
+// ASR Events: Analytics — daily aggregate of ASR blocks/audits
 resource tableASREvents 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderASREvents_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 730
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: inventoryArchiveRetentionDays
     schema: {
       name: 'DefenderASREvents_CL'
       columns: [
@@ -330,14 +394,14 @@ resource tableASREvents 'Microsoft.OperationalInsights/workspaces/tables@2022-10
   }
 }
 
-// ProtectionState: Analytics — tamper/cloud/realtime protection status per config
+// ProtectionState: Analytics — tamper / cloud / realtime protection status per config
 resource tableProtectionState 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderProtectionState_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 730
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: inventoryArchiveRetentionDays
     schema: {
       name: 'DefenderProtectionState_CL'
       columns: [
@@ -354,14 +418,14 @@ resource tableProtectionState 'Microsoft.OperationalInsights/workspaces/tables@2
   }
 }
 
-// AVOutdated: Analytics — devices met verouderde AV (via Advanced Hunting)
+// AVOutdated: Analytics — devices with outdated AV (via Advanced Hunting)
 resource tableAVOutdated 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderAVOutdated_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 730
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: inventoryArchiveRetentionDays
     schema: {
       name: 'DefenderAVOutdated_CL'
       columns: [
@@ -384,14 +448,14 @@ resource tableAVOutdated 'Microsoft.OperationalInsights/workspaces/tables@2022-1
   }
 }
 
-// AVDetections: Analytics — dagelijks aggregaat van malware-detecties (via Advanced Hunting)
+// AVDetections: Analytics — daily aggregate of malware detections (via Advanced Hunting)
 resource tableAVDetections 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderAVDetections_CL'
   properties: {
     plan: 'Analytics'
-    retentionInDays: 365
-    totalRetentionInDays: 730
+    retentionInDays: analyticsInteractiveRetentionDays
+    totalRetentionInDays: inventoryArchiveRetentionDays
     schema: {
       name: 'DefenderAVDetections_CL'
       columns: [
@@ -407,14 +471,14 @@ resource tableAVDetections 'Microsoft.OperationalInsights/workspaces/tables@2022
 }
 
 // ============================================================
-// Custom Tabellen — Basic Plan (standalone queries, goedkoper)
+// Custom tables — Basic plan (standalone queries, cheaper ingest)
 // ============================================================
 resource tableSoftwareInventory 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderSoftwareInventory_CL'
   properties: {
     plan: 'Basic'
-    totalRetentionInDays: 730
+    totalRetentionInDays: basicRetentionDays
     schema: {
       name: 'DefenderSoftwareInventory_CL'
       columns: [
@@ -436,13 +500,13 @@ resource tableSecureConfig 'Microsoft.OperationalInsights/workspaces/tables@2022
   name: 'DefenderSecureConfig_CL'
   properties: {
     plan: 'Basic'
-    totalRetentionInDays: 730
+    totalRetentionInDays: basicRetentionDays
     schema: {
       name: 'DefenderSecureConfig_CL'
       columns: [
         { name: 'TimeGenerated', type: 'datetime' }
         { name: 'DeviceId', type: 'string' }        // MDE device ID
-        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — join met Intune
+        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — join with Intune
         { name: 'DeviceName', type: 'string' }
         { name: 'ConfigurationId', type: 'string' }
         { name: 'ConfigurationCategory', type: 'string' }
@@ -455,22 +519,22 @@ resource tableSecureConfig 'Microsoft.OperationalInsights/workspaces/tables@2022
 }
 
 // ============================================================
-// Koppeltabel — Device ↔ Software relatie
+// Link table — Device ↔ Software relationship
 // ============================================================
 resource tableDeviceSoftware 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'DefenderDeviceSoftware_CL'
   properties: {
     plan: 'Basic'
-    totalRetentionInDays: 730
+    totalRetentionInDays: basicRetentionDays
     schema: {
       name: 'DefenderDeviceSoftware_CL'
       columns: [
         { name: 'TimeGenerated', type: 'datetime' }
-        { name: 'DeviceId', type: 'string' }        // MDE device ID — join met DeviceInventory
-        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — join met Intune
+        { name: 'DeviceId', type: 'string' }        // MDE device ID — join with DeviceInventory
+        { name: 'AadDeviceId', type: 'string' }     // Entra device ID — join with Intune
         { name: 'DeviceName', type: 'string' }
-        { name: 'SoftwareId', type: 'string' }      // Join met SoftwareInventory
+        { name: 'SoftwareId', type: 'string' }      // Join with SoftwareInventory
         { name: 'SoftwareName', type: 'string' }
         { name: 'SoftwareVendor', type: 'string' }
         { name: 'SoftwareVersion', type: 'string' }
@@ -480,14 +544,14 @@ resource tableDeviceSoftware 'Microsoft.OperationalInsights/workspaces/tables@20
 }
 
 // ============================================================
-// Intune Tabellen — Basic Plan (standalone)
+// Intune tables — Basic plan (standalone)
 // ============================================================
 resource tableIntuneApps 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01' = {
   parent: workspace
   name: 'IntuneDetectedApps_CL'
   properties: {
     plan: 'Basic'
-    totalRetentionInDays: 365
+    totalRetentionInDays: basicAppsRetentionDays
     schema: {
       name: 'IntuneDetectedApps_CL'
       columns: [
@@ -506,7 +570,7 @@ resource tableIntuneCompliance 'Microsoft.OperationalInsights/workspaces/tables@
   name: 'IntuneComplianceReports_CL'
   properties: {
     plan: 'Basic'
-    totalRetentionInDays: 730
+    totalRetentionInDays: basicRetentionDays
     schema: {
       name: 'IntuneComplianceReports_CL'
       columns: [
