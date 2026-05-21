@@ -68,7 +68,7 @@
       "url": "https://api.securitycenter.microsoft.com/api/advancedqueries/run",
       "scope": "https://api.securitycenter.microsoft.com/.default",
       "stream": "Custom-DefenderASREvents_CL",
-      "dcr": "daily",
+      "dcr": "dailyDevice",
       "transform": "advancedHunting",
       "expected_columns": ["RuleName", "ActionType", "EventCount", "UniqueDevices"],
       "query": "DeviceEvents | where Timestamp > ago(1d) | where ActionType startswith 'Asr' | extend Action = case(ActionType endswith 'Blocked', 'Blocked', ActionType endswith 'Audited', 'Audited', ActionType endswith 'Warned', 'Warned', 'Other') | extend RuleName = replace_regex(ActionType, '(Blocked|Audited|Warned|Bypassed)$', '') | where Action != 'Other' | summarize EventCount=count(), UniqueDevices=dcount(DeviceId) by RuleName, Action | project RuleName, ActionType=Action, EventCount, UniqueDevices"
@@ -78,7 +78,7 @@
       "url": "https://api.securitycenter.microsoft.com/api/advancedqueries/run",
       "scope": "https://api.securitycenter.microsoft.com/.default",
       "stream": "Custom-DefenderProtectionState_CL",
-      "dcr": "daily",
+      "dcr": "dailyDevice",
       "transform": "advancedHunting",
       "expected_columns": [
         "ConfigurationId",
@@ -96,7 +96,7 @@
       "url": "https://api.securitycenter.microsoft.com/api/advancedqueries/run",
       "scope": "https://api.securitycenter.microsoft.com/.default",
       "stream": "Custom-DefenderAVOutdated_CL",
-      "dcr": "daily",
+      "dcr": "dailyDevice",
       "transform": "advancedHunting",
       "expected_columns": [
         "DeviceId",
@@ -120,7 +120,7 @@
       "url": "https://api.securitycenter.microsoft.com/api/advancedqueries/run",
       "scope": "https://api.securitycenter.microsoft.com/.default",
       "stream": "Custom-DefenderAVDetections_CL",
-      "dcr": "daily",
+      "dcr": "dailyDevice",
       "transform": "advancedHunting",
       "expected_columns": [
         "ThreatName",
@@ -137,7 +137,7 @@
       "method": "GET",
       "scope": "https://api.securitycenter.microsoft.com/.default",
       "stream": "Custom-DefenderDeviceInventory_CL",
-      "dcr": "daily",
+      "dcr": "dailyDevice",
       "transform": "list"
     },
     {
@@ -146,7 +146,7 @@
       "method": "GET",
       "scope": "https://graph.microsoft.com/.default",
       "stream": "Custom-IntuneComplianceReports_CL",
-      "dcr": "daily",
+      "dcr": "dailyDevice",
       "transform": "graphList"
     }
   ],

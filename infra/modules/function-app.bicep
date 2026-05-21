@@ -26,6 +26,9 @@ param dceEndpoint string
 @description('DCR Daily Scores Immutable ID')
 param dcrDailyScoresImmutableId string
 
+@description('DCR Daily Device — Immutable ID')
+param dcrDailyDeviceImmutableId string
+
 @description('DCR Weekly Snapshots Immutable ID')
 param dcrWeeklySnapshotsImmutableId string
 
@@ -154,6 +157,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
         { name: 'DCE_ENDPOINT', value: dceEndpoint }
         { name: 'DCR_DAILY_SCORES_ID', value: dcrDailyScoresImmutableId }
+        { name: 'DCR_DAILY_DEVICE_ID', value: dcrDailyDeviceImmutableId }
         { name: 'DCR_WEEKLY_SNAPSHOTS_ID', value: dcrWeeklySnapshotsImmutableId }
         { name: 'DCR_INTUNE_ID', value: dcrIntuneImmutableId }
         { name: 'APP_CONFIG_ENDPOINT', value: appConfigEndpoint }

@@ -147,6 +147,7 @@ module functionApp 'modules/function-app.bicep' = {
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     dceEndpoint: dcr.outputs.dceEndpoint
     dcrDailyScoresImmutableId: dcr.outputs.dcrDailyScoresImmutableId
+    dcrDailyDeviceImmutableId: dcr.outputs.dcrDailyDeviceImmutableId
     dcrWeeklySnapshotsImmutableId: dcr.outputs.dcrWeeklySnapshotsImmutableId
     dcrIntuneImmutableId: dcr.outputs.dcrIntuneImmutableId
     appConfigEndpoint: appConfig.outputs.appConfigEndpoint
@@ -174,13 +175,19 @@ module rbacWorkspace 'modules/rbac-workspace.bicep' = {
 // ============================================================
 // Module: App Role Assignments (optional; requires bootstrap UAMI)
 // ============================================================
+// When scriptRunnerIdentityId is empty the module is skipped via the `if` condition,
+// but ARM still validates the linked template at pre-flight. Pass a syntactically
+// valid placeholder resource ID so the `userAssignedIdentities` map key parses; it
+// is never used because the deployment itself is suppressed.
+var rbacAppRolesIdentityId = empty(scriptRunnerIdentityId) ? '${subscription().id}/resourceGroups/placeholder/providers/Microsoft.ManagedIdentity/userAssignedIdentities/placeholder' : scriptRunnerIdentityId
+
 module rbacAppRoles 'modules/rbac-approles.bicep' = if (!empty(scriptRunnerIdentityId)) {
   name: 'deploy-rbac-approles'
   params: {
     location: location
     tags: tags
     identityPrincipalId: identity.outputs.principalId
-    scriptRunnerIdentityId: scriptRunnerIdentityId
+    scriptRunnerIdentityId: rbacAppRolesIdentityId
   }
 }
 

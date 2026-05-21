@@ -303,6 +303,7 @@ class PollingEngine:
         """
         dcr_map = {
             "daily": os.environ.get("DCR_DAILY_SCORES_ID", ""),
+            "dailyDevice": os.environ.get("DCR_DAILY_DEVICE_ID", ""),
             "weekly": os.environ.get("DCR_WEEKLY_SNAPSHOTS_ID", ""),
             "intune": os.environ.get("DCR_INTUNE_ID", ""),
         }

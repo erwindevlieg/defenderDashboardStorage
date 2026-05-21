@@ -14,6 +14,7 @@ def mock_env():
         "AZURE_CLIENT_ID": "test-client-id",
         "DCE_ENDPOINT": "https://test-dce.westeurope.ingest.monitor.azure.com",
         "DCR_DAILY_SCORES_ID": "dcr-daily-test-id",
+        "DCR_DAILY_DEVICE_ID": "dcr-daily-device-test-id",
         "DCR_WEEKLY_SNAPSHOTS_ID": "dcr-weekly-test-id",
         "DCR_INTUNE_ID": "dcr-intune-test-id",
         "APP_CONFIG_ENDPOINT": "",

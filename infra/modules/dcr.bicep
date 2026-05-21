@@ -98,6 +98,67 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
           { name: 'RelatedSoftwareId', type: 'string' }
         ]
       }
+    }
+    destinations: {
+      logAnalytics: [
+        {
+          workspaceResourceId: workspaceId
+          name: 'defender-dashboard-workspace'
+        }
+      ]
+    }
+    dataFlows: [
+      {
+        streams: [ 'Custom-DefenderExposureScore_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderExposureScore_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderSecureScore_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderSecureScore_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderSecureScoreControls_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderSecureScoreControls_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderConfigurationScore_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderConfigurationScore_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderAlertAggregates_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderAlertAggregates_CL'
+      }
+      {
+        streams: [ 'Custom-DefenderRecommendations_CL' ]
+        destinations: [ 'defender-dashboard-workspace' ]
+        transformKql: 'source | extend TimeGenerated = now()'
+        outputStream: 'Custom-DefenderRecommendations_CL'
+      }
+    ]
+  }
+}
+
+// ============================================================
+// DCR: Daily Device Signals (ASR / ProtectionState / AV / Inventory / IntuneCompliance)
+// Split off from dcrDailyScores because a single DCR is capped at 10 dataFlows.
+// ============================================================
+resource dcrDailyDevice 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
+  name: 'dcr-defender-daily-device-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    dataCollectionEndpointId: dataCollectionEndpoint.id
+    streamDeclarations: {
       'Custom-DefenderASREvents_CL': {
         columns: [
           { name: 'TimeGenerated', type: 'datetime' }
@@ -191,42 +252,6 @@ resource dcrDailyScores 'Microsoft.Insights/dataCollectionRules@2023-03-11' = {
       ]
     }
     dataFlows: [
-      {
-        streams: [ 'Custom-DefenderExposureScore_CL' ]
-        destinations: [ 'defender-dashboard-workspace' ]
-        transformKql: 'source | extend TimeGenerated = now()'
-        outputStream: 'Custom-DefenderExposureScore_CL'
-      }
-      {
-        streams: [ 'Custom-DefenderSecureScore_CL' ]
-        destinations: [ 'defender-dashboard-workspace' ]
-        transformKql: 'source | extend TimeGenerated = now()'
-        outputStream: 'Custom-DefenderSecureScore_CL'
-      }
-      {
-        streams: [ 'Custom-DefenderSecureScoreControls_CL' ]
-        destinations: [ 'defender-dashboard-workspace' ]
-        transformKql: 'source | extend TimeGenerated = now()'
-        outputStream: 'Custom-DefenderSecureScoreControls_CL'
-      }
-      {
-        streams: [ 'Custom-DefenderConfigurationScore_CL' ]
-        destinations: [ 'defender-dashboard-workspace' ]
-        transformKql: 'source | extend TimeGenerated = now()'
-        outputStream: 'Custom-DefenderConfigurationScore_CL'
-      }
-      {
-        streams: [ 'Custom-DefenderAlertAggregates_CL' ]
-        destinations: [ 'defender-dashboard-workspace' ]
-        transformKql: 'source | extend TimeGenerated = now()'
-        outputStream: 'Custom-DefenderAlertAggregates_CL'
-      }
-      {
-        streams: [ 'Custom-DefenderRecommendations_CL' ]
-        destinations: [ 'defender-dashboard-workspace' ]
-        transformKql: 'source | extend TimeGenerated = now()'
-        outputStream: 'Custom-DefenderRecommendations_CL'
-      }
       {
         streams: [ 'Custom-DefenderASREvents_CL' ]
         destinations: [ 'defender-dashboard-workspace' ]
@@ -512,6 +537,12 @@ output dcrDailyScoresImmutableId string = dcrDailyScores.properties.immutableId
 
 @description('DCR Daily Scores — Resource ID')
 output dcrDailyScoresId string = dcrDailyScores.id
+
+@description('DCR Daily Device — Immutable ID')
+output dcrDailyDeviceImmutableId string = dcrDailyDevice.properties.immutableId
+
+@description('DCR Daily Device — Resource ID')
+output dcrDailyDeviceId string = dcrDailyDevice.id
 
 @description('DCR Weekly Snapshots — Immutable ID')
 output dcrWeeklySnapshotsImmutableId string = dcrWeeklySnapshots.properties.immutableId

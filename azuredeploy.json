@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "2265668400776780851"
+      "templateHash": "10036427482219710508"
     }
   },
   "parameters": {
@@ -112,6 +112,9 @@
         "description": "IPv4 CIDR ranges allowed to call the function app when restrictHealthEndpoint is true."
       }
     }
+  },
+  "variables": {
+    "rbacAppRolesIdentityId": "[if(empty(parameters('scriptRunnerIdentityId')), format('{0}/resourceGroups/placeholder/providers/Microsoft.ManagedIdentity/userAssignedIdentities/placeholder', subscription().id), parameters('scriptRunnerIdentityId'))]"
   },
   "resources": [
     {
@@ -1422,7 +1425,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "12138832827483355578"
+              "templateHash": "3963144994934251431"
             }
           },
           "parameters": {
@@ -1642,7 +1645,92 @@
                         "type": "string"
                       }
                     ]
+                  }
+                },
+                "destinations": {
+                  "logAnalytics": [
+                    {
+                      "workspaceResourceId": "[parameters('workspaceId')]",
+                      "name": "defender-dashboard-workspace"
+                    }
+                  ]
+                },
+                "dataFlows": [
+                  {
+                    "streams": [
+                      "Custom-DefenderExposureScore_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderExposureScore_CL"
                   },
+                  {
+                    "streams": [
+                      "Custom-DefenderSecureScore_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderSecureScore_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderSecureScoreControls_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderSecureScoreControls_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderConfigurationScore_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderConfigurationScore_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderAlertAggregates_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderAlertAggregates_CL"
+                  },
+                  {
+                    "streams": [
+                      "Custom-DefenderRecommendations_CL"
+                    ],
+                    "destinations": [
+                      "defender-dashboard-workspace"
+                    ],
+                    "transformKql": "source | extend TimeGenerated = now()",
+                    "outputStream": "Custom-DefenderRecommendations_CL"
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/dataCollectionRules",
+              "apiVersion": "2023-03-11",
+              "name": "[format('dcr-defender-daily-device-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "dataCollectionEndpointId": "[resourceId('Microsoft.Insights/dataCollectionEndpoints', format('dce-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "streamDeclarations": {
                   "Custom-DefenderASREvents_CL": {
                     "columns": [
                       {
@@ -1913,66 +2001,6 @@
                   ]
                 },
                 "dataFlows": [
-                  {
-                    "streams": [
-                      "Custom-DefenderExposureScore_CL"
-                    ],
-                    "destinations": [
-                      "defender-dashboard-workspace"
-                    ],
-                    "transformKql": "source | extend TimeGenerated = now()",
-                    "outputStream": "Custom-DefenderExposureScore_CL"
-                  },
-                  {
-                    "streams": [
-                      "Custom-DefenderSecureScore_CL"
-                    ],
-                    "destinations": [
-                      "defender-dashboard-workspace"
-                    ],
-                    "transformKql": "source | extend TimeGenerated = now()",
-                    "outputStream": "Custom-DefenderSecureScore_CL"
-                  },
-                  {
-                    "streams": [
-                      "Custom-DefenderSecureScoreControls_CL"
-                    ],
-                    "destinations": [
-                      "defender-dashboard-workspace"
-                    ],
-                    "transformKql": "source | extend TimeGenerated = now()",
-                    "outputStream": "Custom-DefenderSecureScoreControls_CL"
-                  },
-                  {
-                    "streams": [
-                      "Custom-DefenderConfigurationScore_CL"
-                    ],
-                    "destinations": [
-                      "defender-dashboard-workspace"
-                    ],
-                    "transformKql": "source | extend TimeGenerated = now()",
-                    "outputStream": "Custom-DefenderConfigurationScore_CL"
-                  },
-                  {
-                    "streams": [
-                      "Custom-DefenderAlertAggregates_CL"
-                    ],
-                    "destinations": [
-                      "defender-dashboard-workspace"
-                    ],
-                    "transformKql": "source | extend TimeGenerated = now()",
-                    "outputStream": "Custom-DefenderAlertAggregates_CL"
-                  },
-                  {
-                    "streams": [
-                      "Custom-DefenderRecommendations_CL"
-                    ],
-                    "destinations": [
-                      "defender-dashboard-workspace"
-                    ],
-                    "transformKql": "source | extend TimeGenerated = now()",
-                    "outputStream": "Custom-DefenderRecommendations_CL"
-                  },
                   {
                     "streams": [
                       "Custom-DefenderASREvents_CL"
@@ -2616,6 +2644,20 @@
                 "description": "DCR Daily Scores — Resource ID"
               },
               "value": "[resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-daily-scores-{0}', parameters('resourceToken')))]"
+            },
+            "dcrDailyDeviceImmutableId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Daily Device — Immutable ID"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-daily-device-{0}', parameters('resourceToken'))), '2023-03-11').immutableId]"
+            },
+            "dcrDailyDeviceId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Daily Device — Resource ID"
+              },
+              "value": "[resourceId('Microsoft.Insights/dataCollectionRules', format('dcr-defender-daily-device-{0}', parameters('resourceToken')))]"
             },
             "dcrWeeklySnapshotsImmutableId": {
               "type": "string",
@@ -3369,6 +3411,9 @@
           "dcrDailyScoresImmutableId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dcrDailyScoresImmutableId.value]"
           },
+          "dcrDailyDeviceImmutableId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dcrDailyDeviceImmutableId.value]"
+          },
           "dcrWeeklySnapshotsImmutableId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-dcr'), '2025-04-01').outputs.dcrWeeklySnapshotsImmutableId.value]"
           },
@@ -3407,7 +3452,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "3125291574702804164"
+              "templateHash": "2911955917993413644"
             }
           },
           "parameters": {
@@ -3459,6 +3504,12 @@
               "type": "string",
               "metadata": {
                 "description": "DCR Daily Scores Immutable ID"
+              }
+            },
+            "dcrDailyDeviceImmutableId": {
+              "type": "string",
+              "metadata": {
+                "description": "DCR Daily Device — Immutable ID"
               }
             },
             "dcrWeeklySnapshotsImmutableId": {
@@ -3655,6 +3706,10 @@
                     {
                       "name": "DCR_DAILY_SCORES_ID",
                       "value": "[parameters('dcrDailyScoresImmutableId')]"
+                    },
+                    {
+                      "name": "DCR_DAILY_DEVICE_ID",
+                      "value": "[parameters('dcrDailyDeviceImmutableId')]"
                     },
                     {
                       "name": "DCR_WEEKLY_SNAPSHOTS_ID",
@@ -3889,7 +3944,7 @@
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'deploy-identity'), '2025-04-01').outputs.principalId.value]"
           },
           "scriptRunnerIdentityId": {
-            "value": "[parameters('scriptRunnerIdentityId')]"
+            "value": "[variables('rbacAppRolesIdentityId')]"
           }
         },
         "template": {
