@@ -24,6 +24,9 @@ jobs:
         uses: azure/CLI@9eb25b8360668fb0ecbafa808d40e2197b2f5f52 # v3.0.0
         with:
           inlineScript: |
+            # Pin Bicep version so the templateHash matches what contributors
+            # produce locally (azure/CLI image otherwise tracks latest Bicep).
+            az bicep install --version v0.43.8
             az bicep build --file infra/main.bicep --outfile azuredeploy.check.json
 
       - name: Compare with committed azuredeploy.json
