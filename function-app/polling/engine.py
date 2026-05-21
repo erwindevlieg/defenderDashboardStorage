@@ -22,6 +22,7 @@ from azure.identity.aio import DefaultAzureCredential as AsyncDefaultAzureCreden
 
 from .defender_client import DefenderClient
 from .graph_client import GraphClient
+from .http_base import PaginationError
 from .ingestion import IngestionClient
 from .state_store import FailedEndpointStore
 
@@ -351,6 +352,13 @@ class PollingEngine:
                     f"(endpoint {key}); check appSettings/DCR_*_ID."
                 )
 
+            transform = ep.get("transform", "list")
+            if transform in ("list", "graphList", "exportList"):
+                return await self._process_endpoint_paginated(
+                    ep, dcr_id, transform, started, dims
+                )
+
+            # Non-paginated path: single dict / advancedHunting.
             data = await self._fetch_data(ep)
             if not data:
                 logger.warning(
@@ -383,6 +391,8 @@ class PollingEngine:
                     }
                 },
             )
+            # Clear any stale resume checkpoint after a successful run.
+            ep.pop("resume_next_link", None)
             return {
                 "status": "ok",
                 "endpoint": ep,
@@ -407,6 +417,113 @@ class PollingEngine:
                 "endpoint": ep,
                 "duration": duration,
             }
+
+    async def _process_endpoint_paginated(
+        self,
+        ep: dict,
+        dcr_id: str,
+        transform: str,
+        started: float,
+        dims: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Stream pages from a paginated endpoint and upload per page.
+
+        On a mid-stream failure persists ``resume_next_link`` on ``ep`` so
+        the next run continues from that point instead of replaying earlier
+        pages (which would duplicate ingestion).
+        """
+        key = ep.get("key", ep.get("stream", "unknown"))
+        url = ep["url"]
+        stream = ep["stream"]
+        scope = ep.get("scope", "")
+        client = (
+            self._defender if "securitycenter.microsoft.com" in scope else self._graph
+        )
+        start_next_link = ep.get("resume_next_link")
+        if start_next_link:
+            logger.info(
+                "Resuming %s from stored checkpoint",
+                key,
+                extra={"custom_dimensions": {**dims, "resume": True}},
+            )
+
+        total_records = 0
+        pages_uploaded = 0
+        try:
+            async for page, _next in client.iter_pages(
+                url, start_next_link=start_next_link
+            ):
+                records = self._transform(page, transform)
+                if not records:
+                    continue
+                await self._ingestion.upload(
+                    dcr_id=dcr_id,
+                    stream_name=stream,
+                    records=records,
+                    expected_columns=ep.get("expected_columns"),
+                )
+                total_records += len(records)
+                pages_uploaded += 1
+        except PaginationError as exc:
+            duration = time.monotonic() - started
+            # Persist resume point on the endpoint so the next run picks up here.
+            ep["resume_next_link"] = exc.last_next_link
+            logger.warning(
+                "Pagination failed for %s after %d page(s), %d records uploaded; "
+                "will resume from checkpoint next run",
+                key,
+                pages_uploaded,
+                total_records,
+                extra={
+                    "custom_dimensions": {
+                        **dims,
+                        "pages_uploaded": pages_uploaded,
+                        "records_uploaded": total_records,
+                        "duration_seconds": round(duration, 3),
+                    }
+                },
+            )
+            return {
+                "status": "failed",
+                "endpoint": ep,
+                "duration": duration,
+            }
+
+        duration = time.monotonic() - started
+        if total_records == 0:
+            logger.warning(
+                "No data received for %s", key, extra={"custom_dimensions": dims}
+            )
+            ep.pop("resume_next_link", None)
+            return {
+                "status": "empty",
+                "endpoint": ep,
+                "duration": duration,
+            }
+
+        # Successful drain — clear any stale checkpoint.
+        ep.pop("resume_next_link", None)
+        logger.info(
+            "Successfully ingested %d records for %s in %.2fs (%d page(s))",
+            total_records,
+            key,
+            duration,
+            pages_uploaded,
+            extra={
+                "custom_dimensions": {
+                    **dims,
+                    "records": total_records,
+                    "pages": pages_uploaded,
+                    "duration_seconds": round(duration, 3),
+                }
+            },
+        )
+        return {
+            "status": "ok",
+            "endpoint": ep,
+            "records": total_records,
+            "duration": duration,
+        }
 
     async def _fetch_data(self, endpoint: dict) -> list[dict]:
         """Fetch data via the appropriate client based on scope."""

@@ -11,6 +11,7 @@ import asyncio
 import logging
 import os
 import random
+from collections.abc import AsyncIterator
 from email.utils import parsedate_to_datetime
 from typing import ClassVar
 
@@ -20,6 +21,20 @@ from azure.core.credentials import TokenCredential
 from .auth import TokenCache
 
 logger = logging.getLogger(__name__)
+
+
+class PaginationError(Exception):
+    """Raised by ``iter_pages`` when a page fails mid-stream.
+
+    Carries the last successful ``@odata.nextLink`` (i.e. the URL that *would*
+    have produced the failed page) so the caller can persist a checkpoint and
+    resume on the next run instead of restarting at page 1.
+    """
+
+    def __init__(self, url: str, last_next_link: str | None) -> None:
+        super().__init__(f"pagination failed at {url}")
+        self.url = url
+        self.last_next_link = last_next_link
 
 
 def _env_int(name: str, default: int, *, min_value: int = 0) -> int:
@@ -117,34 +132,70 @@ class BaseHttpClient:
             await self._session.close()
         self._session = None
 
-    async def fetch(self, url: str) -> dict | list | None:
-        """Fetch data with automatic pagination via ``@odata.nextLink``."""
-        all_values: list[dict] = []
-        current_url: str | None = url
+    async def iter_pages(
+        self, url: str, start_next_link: str | None = None
+    ) -> AsyncIterator[tuple[dict, str | None]]:
+        """Yield API pages one at a time.
+
+        Each yield is ``(page_dict, next_link)`` where ``next_link`` is the
+        URL of the *next* page (or ``None`` for the last page).
+
+        On failure raises :class:`PaginationError` whose ``last_next_link``
+        attribute points at the URL that just failed. Callers should persist
+        that value and pass it back as ``start_next_link`` on the next run to
+        resume from that point.
+
+        Args:
+            url: Initial URL to fetch.
+            start_next_link: Optional resume URL from a previous failed run.
+                When provided, the initial ``url`` is ignored.
+        """
         session = await self._session_for()
+        current_url: str | None = start_next_link or url
+        page_index = 0
 
         while current_url:
             data = await self._request_with_retry(session, current_url)
             if data is None:
-                return None
+                raise PaginationError(current_url, current_url)
 
-            if not all_values and "value" not in data:
-                return data
-
-            values = data.get("value", [])
-            all_values.extend(values)
-
-            current_url = data.get("@odata.nextLink")
-            if current_url:
+            next_link = data.get("@odata.nextLink") if isinstance(data, dict) else None
+            page_index += 1
+            if next_link:
                 logger.debug(
-                    "%s pagination: %d records so far",
+                    "%s pagination: yielded page %d (has next)",
                     self.api_label,
-                    len(all_values),
+                    page_index,
                 )
+            yield data, next_link
+            current_url = next_link
+
+    async def fetch(
+        self, url: str, start_next_link: str | None = None
+    ) -> dict | list | None:
+        """Fetch data with automatic pagination via ``@odata.nextLink``.
+
+        Backwards-compatible wrapper around :meth:`iter_pages` that
+        accumulates all pages and returns the merged dict. Prefer
+        ``iter_pages`` for new code so failures do not throw away progress.
+        """
+        all_values: list[dict] = []
+        first_non_value: dict | list | None = None
+
+        try:
+            async for page, _next in self.iter_pages(
+                url, start_next_link=start_next_link
+            ):
+                if isinstance(page, dict) and "value" in page:
+                    all_values.extend(page.get("value", []))
+                elif not all_values and first_non_value is None:
+                    first_non_value = page
+        except PaginationError:
+            return None
 
         if all_values:
             return {"value": all_values}
-        return None
+        return first_non_value
 
     async def _request_with_retry(
         self,

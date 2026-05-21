@@ -6,6 +6,34 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from polling.engine import PollingEngine
+from polling.http_base import PaginationError
+
+
+def _bridge_iter_pages(client):
+    """Make ``iter_pages`` delegate to the mocked ``fetch`` for the same client.
+
+    Tests historically mock ``client.fetch``; the engine now calls
+    ``client.iter_pages`` for list-transform endpoints. To keep those tests
+    expressive, we route ``iter_pages`` back through ``fetch`` so a single
+    mock keeps controlling both paths. ``fetch`` returning ``None`` is
+    translated into :class:`PaginationError` so the engine takes its failure
+    branch (matching production semantics).
+    """
+
+    async def _iter(url, start_next_link=None):
+        target = start_next_link or url
+        try:
+            data = await client.fetch(target)
+        except Exception:
+            raise
+        if data is None:
+            raise PaginationError(target, target)
+        if isinstance(data, dict):
+            yield data, None
+        else:
+            yield {"value": data}, None
+
+    client.iter_pages = _iter
 
 
 def _build_engine(mock_credential):
@@ -24,6 +52,8 @@ def _build_engine(mock_credential):
     engine._ingestion.aclose = AsyncMock()
     engine._defender.aclose = AsyncMock()
     engine._graph.aclose = AsyncMock()
+    _bridge_iter_pages(engine._defender)
+    _bridge_iter_pages(engine._graph)
     return engine
 
 
@@ -175,3 +205,85 @@ class TestIntegration:
 
         assert len(captured["failed"]) == 1
         assert captured["failed"][0]["key"] == "bad"
+
+    @pytest.mark.asyncio
+    async def test_pagination_failure_persists_resume_checkpoint(
+        self, mock_credential, monkeypatch
+    ):
+        """Mid-stream pagination failure must upload prior pages and stash resume link."""
+        engine = _build_engine(mock_credential)
+        monkeypatch.setenv("DCR_DAILY_SCORES_ID", "dcr-test")
+
+        endpoints = [
+            {
+                "key": "paged",
+                "url": "https://graph.microsoft.com/v1.0/page1",
+                "scope": "https://graph.microsoft.com/.default",
+                "stream": "Custom-Paged_CL",
+                "dcr": "daily",
+                "transform": "graphList",
+            }
+        ]
+        engine._load_endpoints = MagicMock(return_value=endpoints)
+        engine._load_failed = MagicMock(return_value=[])
+        captured: dict[str, list] = {}
+        engine._save_failed = lambda schedule, failed: captured.setdefault(
+            "failed", failed
+        )
+
+        async def iter_pages_side_effect(url, start_next_link=None):
+            # Yield two pages successfully, fail when the caller asks for the third.
+            yield {"value": [{"x": 1}], "@odata.nextLink": "next-2"}, "next-2"
+            yield {"value": [{"x": 2}], "@odata.nextLink": "next-3"}, "next-3"
+            raise PaginationError("next-3", "next-3")
+
+        engine._graph.iter_pages = iter_pages_side_effect
+
+        await engine.run_daily()
+
+        # Two pages were uploaded before the failure.
+        assert engine._ingestion.upload.await_count == 2
+        # Endpoint is queued for retry with the resume checkpoint set.
+        assert len(captured["failed"]) == 1
+        assert captured["failed"][0]["key"] == "paged"
+        assert captured["failed"][0]["resume_next_link"] == "next-3"
+
+    @pytest.mark.asyncio
+    async def test_resume_uses_stored_next_link(self, mock_credential, monkeypatch):
+        """A retried endpoint with ``resume_next_link`` must resume there, not from page 1."""
+        engine = _build_engine(mock_credential)
+        monkeypatch.setenv("DCR_DAILY_SCORES_ID", "dcr-test")
+
+        endpoints = [
+            {
+                "key": "paged",
+                "url": "https://graph.microsoft.com/v1.0/page1",
+                "scope": "https://graph.microsoft.com/.default",
+                "stream": "Custom-Paged_CL",
+                "dcr": "daily",
+                "transform": "graphList",
+                "resume_next_link": "https://graph.microsoft.com/v1.0/page3",
+            }
+        ]
+        engine._load_endpoints = MagicMock(return_value=endpoints)
+        engine._load_failed = MagicMock(return_value=[])
+        captured: dict[str, list] = {}
+        engine._save_failed = lambda schedule, failed: captured.setdefault(
+            "failed", failed
+        )
+
+        seen_urls: list[str] = []
+
+        async def iter_pages_side_effect(url, start_next_link=None):
+            seen_urls.append(start_next_link or url)
+            yield {"value": [{"x": 3}]}, None
+
+        engine._graph.iter_pages = iter_pages_side_effect
+
+        await engine.run_daily()
+
+        # Resume URL was used, not the original page1.
+        assert seen_urls == ["https://graph.microsoft.com/v1.0/page3"]
+        # Successful drain → endpoint is not in the failed list, checkpoint cleared.
+        assert captured.get("failed", []) == []
+        assert "resume_next_link" not in endpoints[0]
