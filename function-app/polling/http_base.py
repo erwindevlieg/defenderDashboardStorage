@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import random
 from email.utils import parsedate_to_datetime
 from typing import ClassVar
@@ -20,7 +21,20 @@ from .auth import TokenCache
 
 logger = logging.getLogger(__name__)
 
-MAX_RETRIES = 3
+
+def _env_int(name: str, default: int, *, min_value: int = 0) -> int:
+    """Read an int env var with a fallback and a lower bound."""
+    raw = os.environ.get(name)
+    if not raw:
+        return default
+    try:
+        return max(min_value, int(raw))
+    except ValueError:
+        logger.warning("Invalid %s=%r, using default %d", name, raw, default)
+        return default
+
+
+MAX_RETRIES = _env_int("HTTP_MAX_RETRIES", 3, min_value=0)
 RETRY_BACKOFF_BASE = 2  # seconds
 # PII protection: only log a short fragment of the error body.
 ERROR_BODY_LOG_LIMIT = 200
@@ -79,7 +93,10 @@ class BaseHttpClient:
         return {}
 
     def _timeout(self) -> aiohttp.ClientTimeout:
-        return aiohttp.ClientTimeout(total=30, connect=5, sock_read=15)
+        total = _env_int("HTTP_TOTAL_TIMEOUT_SECS", 30, min_value=1)
+        connect = _env_int("HTTP_CONNECT_TIMEOUT_SECS", 5, min_value=1)
+        read = _env_int("HTTP_READ_TIMEOUT_SECS", 15, min_value=1)
+        return aiohttp.ClientTimeout(total=total, connect=connect, sock_read=read)
 
     async def _session_for(
         self, timeout: aiohttp.ClientTimeout | None = None

@@ -45,6 +45,29 @@ param alertEmail string = ''
 @maxValue(730)
 param retentionInDays int = 90
 
+// --- Polling tuning ---
+@description('Maximum concurrent endpoint polls per run (default 5)')
+@minValue(1)
+@maxValue(20)
+param pollConcurrency int = 5
+
+@description('Total HTTP timeout in seconds for outbound API calls')
+@minValue(30)
+@maxValue(600)
+param httpTotalTimeoutSecs int = 120
+
+@description('Maximum number of retries on transient HTTP failures (429/5xx)')
+@minValue(0)
+@maxValue(10)
+param httpMaxRetries int = 3
+
+// --- Network ---
+@description('Restrict the function app to a fixed IP allow-list. Leave false to keep the Deploy-to-Azure experience simple. Enable in production environments that require explicit IP allow-listing.')
+param restrictHealthEndpoint bool = false
+
+@description('IPv4 CIDR ranges allowed to call the function app when restrictHealthEndpoint is true.')
+param allowedIpRanges array = []
+
 // ============================================================
 // Module: Managed Identity
 // ============================================================
@@ -129,6 +152,11 @@ module functionApp 'modules/function-app.bicep' = {
     appConfigEndpoint: appConfig.outputs.appConfigEndpoint
     repoUrl: repoUrl
     repoBranch: repoBranch
+    pollConcurrency: pollConcurrency
+    httpTotalTimeoutSecs: httpTotalTimeoutSecs
+    httpMaxRetries: httpMaxRetries
+    restrictHealthEndpoint: restrictHealthEndpoint
+    allowedIpRanges: allowedIpRanges
   }
 }
 
@@ -144,7 +172,7 @@ module rbacWorkspace 'modules/rbac-workspace.bicep' = {
 }
 
 // ============================================================
-// Module: App Role Assignments (optioneel, vereist bootstrap UAMI)
+// Module: App Role Assignments (optional; requires bootstrap UAMI)
 // ============================================================
 module rbacAppRoles 'modules/rbac-approles.bicep' = if (!empty(scriptRunnerIdentityId)) {
   name: 'deploy-rbac-approles'

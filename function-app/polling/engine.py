@@ -29,6 +29,33 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CONCURRENCY = 5
 
+REQUIRED_ENDPOINT_KEYS = ("url", "scope", "stream", "dcr")
+
+
+def _validate_endpoint(config: dict, source: str) -> bool:
+    """Validate a single endpoint config; returns True when usable.
+
+    Args:
+        config: Parsed endpoint configuration.
+        source: Human-readable origin (e.g. App Configuration key or
+            ``endpoints.json:<schedule>``) used in warning messages.
+    """
+    missing = [key for key in REQUIRED_ENDPOINT_KEYS if not config.get(key)]
+    if missing:
+        logger.warning(
+            "Skipping endpoint %s: missing required keys %s",
+            source,
+            ",".join(missing),
+        )
+        return False
+    if config.get("transform") == "advancedHunting" and not config.get("query"):
+        logger.warning(
+            "Skipping endpoint %s: transform='advancedHunting' but no 'query' provided",
+            source,
+        )
+        return False
+    return True
+
 
 def _ttl_seconds() -> int:
     """Return the failed-endpoint TTL, configurable via FAILED_ENDPOINT_TTL_HOURS."""
@@ -90,9 +117,11 @@ class PollingEngine:
             try:
                 config = json.loads(item.value)
                 config["key"] = item.key
-                endpoints.append(config)
             except (json.JSONDecodeError, TypeError) as e:
                 logger.error("Invalid config for key '%s': %s", item.key, e)
+                continue
+            if _validate_endpoint(config, item.key):
+                endpoints.append(config)
         return endpoints
 
     def _load_fallback_endpoints(self, prefix: str) -> list[dict]:
@@ -112,7 +141,14 @@ class PollingEngine:
             return []
 
         frequency = prefix.split(":")[-1] if ":" in prefix else prefix
-        return all_endpoints.get(frequency, [])
+        raw_endpoints = all_endpoints.get(frequency, [])
+        return [
+            ep
+            for ep in raw_endpoints
+            if _validate_endpoint(
+                ep, f"endpoints.json:{frequency}:{ep.get('key', ep.get('stream', '?'))}"
+            )
+        ]
 
     def _load_failed(self, schedule: str) -> list[tuple[float, dict]]:
         """Combine persisted + in-memory failed lists with TTL filter."""

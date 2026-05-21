@@ -4,12 +4,12 @@
   "parameters": {
     "workbookName": {
       "type": "string",
-      "defaultValue": "Defender Dashboard — Werkplek",
-      "metadata": { "description": "Naam van de workbook" }
+      "defaultValue": "Defender Dashboard — Device",
+      "metadata": { "description": "Workbook display name" }
     },
     "workspaceResourceId": {
       "type": "string",
-      "metadata": { "description": "Resource ID van de Log Analytics workspace" }
+      "metadata": { "description": "Resource ID of the Log Analytics workspace" }
     }
   },
   "resources": [

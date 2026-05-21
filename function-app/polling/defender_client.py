@@ -7,6 +7,7 @@ https://api.securitycenter.microsoft.com.
 from __future__ import annotations
 
 import logging
+import os
 
 import aiohttp
 from azure.core.credentials import TokenCredential
@@ -38,7 +39,18 @@ class DefenderClient(BaseHttpClient):
         Returns:
             Response dict with 'Results' key, or None on error.
         """
-        timeout = aiohttp.ClientTimeout(total=120, connect=5, sock_read=90)
+
+        def _to_int(name: str, default: int) -> int:
+            try:
+                return max(1, int(os.environ.get(name, str(default))))
+            except ValueError:
+                return default
+
+        timeout = aiohttp.ClientTimeout(
+            total=_to_int("HTTP_TOTAL_TIMEOUT_SECS", 120),
+            connect=_to_int("HTTP_CONNECT_TIMEOUT_SECS", 5),
+            sock_read=_to_int("HTTP_READ_TIMEOUT_SECS", 90),
+        )
         session = await self._session_for(timeout=timeout)
         return await self._request_with_retry(
             session,

@@ -14,12 +14,59 @@ import contextlib
 import json
 import logging
 import os
+import random
 import time
 import uuid
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from azure.core.credentials import TokenCredential
 
 logger = logging.getLogger(__name__)
+
+_T = TypeVar("_T")
+
+# Small retry budget for transient table-storage failures. Operations are
+# best-effort; on exhaustion the engine falls back to in-memory state.
+_TABLE_RETRY_ATTEMPTS = 3
+_TABLE_RETRY_BASE_DELAY = 0.5  # seconds
+
+
+def _with_retry(operation: str, func: Callable[[], _T]) -> _T | None:
+    """Call ``func`` with bounded exponential backoff on transient errors.
+
+    Returns the function result on success, or None when the retry budget is
+    exhausted. Each attempt is logged at debug level; the final failure logs a
+    warning so it shows up in App Insights without becoming alert-noise.
+    """
+    last_exc: BaseException | None = None
+    for attempt in range(1, _TABLE_RETRY_ATTEMPTS + 1):
+        try:
+            return func()
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            if attempt == _TABLE_RETRY_ATTEMPTS:
+                break
+            delay = _TABLE_RETRY_BASE_DELAY * (2 ** (attempt - 1)) + random.uniform(
+                0.0, 0.25
+            )
+            logger.debug(
+                "Table op %s failed (attempt %d/%d): %s; retrying in %.2fs",
+                operation,
+                attempt,
+                _TABLE_RETRY_ATTEMPTS,
+                exc,
+                delay,
+            )
+            time.sleep(delay)
+    logger.warning(
+        "Table op %s exhausted retries (%d attempts): %s",
+        operation,
+        _TABLE_RETRY_ATTEMPTS,
+        last_exc,
+    )
+    return None
+
 
 # One TableClient per (account, table) is cached to avoid reconnect cost
 # within a single Function-host instance.
@@ -100,30 +147,33 @@ class FailedEndpointStore:
 
         now = time.time()
         result: list[tuple[float, dict]] = []
-        try:
-            entities = self._client.query_entities(  # type: ignore[attr-defined]
-                query_filter="PartitionKey eq @s",
-                parameters={"s": schedule},
+
+        def _query() -> Any:
+            return list(
+                self._client.query_entities(  # type: ignore[attr-defined]
+                    query_filter="PartitionKey eq @s",
+                    parameters={"s": schedule},
+                )
             )
-            for entity in entities:
-                try:
-                    queued_at = float(entity.get("QueuedAt", 0.0))
-                    endpoint = json.loads(entity.get("Endpoint", "{}"))
-                except (TypeError, ValueError, json.JSONDecodeError):
-                    logger.warning(
-                        "Skipping invalid failed-entry %s", entity.get("RowKey")
-                    )
-                    self._safe_delete(schedule, entity.get("RowKey", ""))
-                    continue
 
-                if now - queued_at >= ttl_seconds:
-                    self._safe_delete(schedule, entity.get("RowKey", ""))
-                    continue
-
-                result.append((queued_at, endpoint))
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Could not load failed-state (%s): %s", schedule, exc)
+        entities = _with_retry(f"load {schedule}", _query)
+        if entities is None:
             return []
+
+        for entity in entities:
+            try:
+                queued_at = float(entity.get("QueuedAt", 0.0))
+                endpoint = json.loads(entity.get("Endpoint", "{}"))
+            except (TypeError, ValueError, json.JSONDecodeError):
+                logger.warning("Skipping invalid failed-entry %s", entity.get("RowKey"))
+                self._safe_delete(schedule, entity.get("RowKey", ""))
+                continue
+
+            if now - queued_at >= ttl_seconds:
+                self._safe_delete(schedule, entity.get("RowKey", ""))
+                continue
+
+            result.append((queued_at, endpoint))
 
         return result
 
@@ -131,16 +181,21 @@ class FailedEndpointStore:
         """Delete all entries for a schedule (after a successful reload)."""
         if not self._client:
             return
-        try:
-            entities = self._client.query_entities(  # type: ignore[attr-defined]
-                query_filter="PartitionKey eq @s",
-                parameters={"s": schedule},
-                select=["PartitionKey", "RowKey"],
+
+        def _query() -> Any:
+            return list(
+                self._client.query_entities(  # type: ignore[attr-defined]
+                    query_filter="PartitionKey eq @s",
+                    parameters={"s": schedule},
+                    select=["PartitionKey", "RowKey"],
+                )
             )
-            for entity in entities:
-                self._safe_delete(schedule, entity.get("RowKey", ""))
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Could not clear failed-state (%s): %s", schedule, exc)
+
+        entities = _with_retry(f"clear {schedule}", _query)
+        if entities is None:
+            return
+        for entity in entities:
+            self._safe_delete(schedule, entity.get("RowKey", ""))
 
     def save(self, schedule: str, failed: list[dict]) -> None:
         """Write the current failed-set (overwrites the previous one)."""
@@ -149,17 +204,17 @@ class FailedEndpointStore:
         self.clear(schedule)
         now = time.time()
         for ep in failed:
-            try:
-                self._client.create_entity(  # type: ignore[attr-defined]
-                    {
-                        "PartitionKey": schedule,
-                        "RowKey": uuid.uuid4().hex,
-                        "QueuedAt": now,
-                        "Endpoint": json.dumps(ep, default=str),
-                    }
-                )
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("Could not save failed-entry: %s", exc)
+            entity = {
+                "PartitionKey": schedule,
+                "RowKey": uuid.uuid4().hex,
+                "QueuedAt": now,
+                "Endpoint": json.dumps(ep, default=str),
+            }
+
+            def _create(e: dict = entity) -> Any:
+                return self._client.create_entity(e)  # type: ignore[attr-defined]
+
+            _with_retry("create_entity", _create)
 
     def _safe_delete(self, partition_key: str, row_key: str) -> None:
         if not self._client or not row_key:

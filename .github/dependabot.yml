@@ -8,6 +8,11 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
+    ignore:
+      # azure-functions: pin to v1.x — v2 has not been released; Dependabot
+      # has historically proposed non-existent major-version bumps here.
+      - dependency-name: "azure-functions"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"

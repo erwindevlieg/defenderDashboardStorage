@@ -8,6 +8,7 @@ ruff>=0.8,<1.0
 mypy>=1.13,<2.0
 pytest>=9.0.3,<10.0
 pytest-asyncio>=1.0,<2.0
+pytest-cov>=5.0,<7.0
 aioresponses>=0.7,<1.0
 interrogate>=1.7,<2.0
 pip-audit>=2.7,<3.0

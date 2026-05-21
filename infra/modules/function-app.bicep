@@ -41,9 +41,37 @@ param repoUrl string = ''
 @description('Branch for code deployment')
 param repoBranch string = 'main'
 
+@description('Maximum concurrent endpoint polls per run (default 5)')
+@minValue(1)
+@maxValue(20)
+param pollConcurrency int = 5
+
+@description('Total HTTP timeout in seconds for outbound API calls')
+@minValue(30)
+@maxValue(600)
+param httpTotalTimeoutSecs int = 120
+
+@description('Maximum number of retries on transient HTTP failures (429/5xx)')
+@minValue(0)
+@maxValue(10)
+param httpMaxRetries int = 3
+
+@description('Restrict the /api/health endpoint to a fixed allow-list (recommended in production). Leave false to keep the endpoint anonymous and reachable from anywhere, which keeps the Deploy-to-Azure UX simple.')
+param restrictHealthEndpoint bool = false
+
+@description('IPv4 CIDR ranges allowed to call the function app when restrictHealthEndpoint is true.')
+param allowedIpRanges array = []
+
 // ============================================================
-// Storage Account (voor Function App runtime)
+// Storage Account (for the Function App runtime)
 // ============================================================
+
+var ipSecurityRestrictionRules = [for (cidr, idx) in allowedIpRanges: {
+  ipAddress: cidr
+  action: 'Allow'
+  priority: 100 + idx
+  name: 'allow-${idx}'
+}]
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: 'stdefenderdash${resourceToken}'
   location: location
@@ -114,6 +142,10 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       }
     }
     siteConfig: {
+      minTlsVersion: '1.2'
+      ftpsState: 'Disabled'
+      ipSecurityRestrictionsDefaultAction: restrictHealthEndpoint ? 'Deny' : 'Allow'
+      ipSecurityRestrictions: restrictHealthEndpoint ? ipSecurityRestrictionRules : []
       appSettings: [
         { name: 'AZURE_CLIENT_ID', value: identityClientId }
         { name: 'AzureWebJobsStorage__accountName', value: storageAccount.name }
@@ -130,6 +162,9 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'INGESTION_STRICT_SCHEMA', value: 'false' }
         { name: 'TOKEN_REFRESH_MARGIN_SECONDS', value: '300' }
         { name: 'FAILED_ENDPOINT_TTL_HOURS', value: '24' }
+        { name: 'POLL_CONCURRENCY', value: string(pollConcurrency) }
+        { name: 'HTTP_TOTAL_TIMEOUT_SECS', value: string(httpTotalTimeoutSecs) }
+        { name: 'HTTP_MAX_RETRIES', value: string(httpMaxRetries) }
         { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
       ]
     }
@@ -172,7 +207,7 @@ resource failedEndpointsTable 'Microsoft.Storage/storageAccounts/tableServices/t
 }
 
 // ============================================================
-// Source Control — automatische code-deployment vanuit GitHub
+// Source Control — automatic code deployment from GitHub
 // ============================================================
 resource sourceControl 'Microsoft.Web/sites/sourcecontrols@2024-04-01' = if (!empty(repoUrl)) {
   parent: functionApp
@@ -180,7 +215,7 @@ resource sourceControl 'Microsoft.Web/sites/sourcecontrols@2024-04-01' = if (!em
   properties: {
     repoUrl: repoUrl
     branch: repoBranch
-    isManualIntegration: true // geen webhook, handmatig sync
+    isManualIntegration: true // no webhook; manual sync only
   }
 }
 

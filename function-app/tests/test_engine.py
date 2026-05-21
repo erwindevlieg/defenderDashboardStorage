@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from polling.engine import PollingEngine
+from polling.engine import PollingEngine, _validate_endpoint
 
 
 class TestPollingEngine:
@@ -133,3 +133,31 @@ class TestPollingEngine:
             len(ah_endpoints) >= 4
         )  # asrEvents, protectionState, avOutdated, avDetections
         assert all("query" in ep and ep["query"] for ep in ah_endpoints)
+
+
+class TestEndpointValidation:
+    """Tests for the endpoint config validator (A4)."""
+
+    def test_valid_endpoint(self):
+        ep = {"url": "https://x", "scope": "s", "stream": "S_CL", "dcr": "daily"}
+        assert _validate_endpoint(ep, "test") is True
+
+    def test_missing_keys_rejected(self, caplog):
+        ep = {"url": "https://x", "stream": "S_CL"}  # no scope/dcr
+        with caplog.at_level("WARNING"):
+            assert _validate_endpoint(ep, "appcfg:foo") is False
+        assert "scope" in caplog.text
+        assert "dcr" in caplog.text
+        assert "appcfg:foo" in caplog.text
+
+    def test_advanced_hunting_without_query_rejected(self, caplog):
+        ep = {
+            "url": "https://x",
+            "scope": "s",
+            "stream": "S_CL",
+            "dcr": "daily",
+            "transform": "advancedHunting",
+        }
+        with caplog.at_level("WARNING"):
+            assert _validate_endpoint(ep, "appcfg:ah") is False
+        assert "advancedHunting" in caplog.text

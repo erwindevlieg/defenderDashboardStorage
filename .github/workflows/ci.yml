@@ -95,12 +95,14 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: function-app/requirements*.txt
 
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
       - name: Run tests
-        run: pytest tests/ -v
+        run: pytest tests/ -v --cov=polling --cov-report=term-missing --cov-fail-under=70
 
   # ============================================================
   # Dependency audit — check for known vulnerabilities
@@ -117,6 +119,8 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: function-app/requirements*.txt
 
       - name: Install pip-audit
         run: pip install pip-audit
