@@ -119,20 +119,26 @@ Na alle stappen:
 
 ### Logging samenvatting
 
-Elke run schrijft één samenvattingsregel met `custom_dimensions` voor App Insights. Voorbeeld-KQL:
+Elke run schrijft één samenvattingsregel met `custom_dimensions` voor App Insights. Elke run heeft een unieke `run_id` (uuid4) die in alle logs van die run terugkomt — handig om endpoint-niveau logs te correleren aan de samenvatting. Voorbeeld-KQL:
 
 ```kql
 traces
-| where message startswith "Polling samenvatting"
+| where message startswith "Polling summary"
 | extend
-    schedule = tostring(customDimensions.schedule),
-    succeeded = toint(customDimensions.succeeded),
-    failed = toint(customDimensions.failed),
-    records = toint(customDimensions.records_total),
-    duration_s = todouble(customDimensions.duration_seconds)
-| project timestamp, schedule, succeeded, failed, records, duration_s
+    schedule    = tostring(customDimensions.schedule),
+    run_id      = tostring(customDimensions.run_id),
+    succeeded   = toint(customDimensions.succeeded),
+    failed      = toint(customDimensions.failed),
+    records     = toint(customDimensions.records_total),
+    duration_s  = todouble(customDimensions.duration_seconds),
+    concurrency = toint(customDimensions.concurrency)
+| project timestamp, schedule, run_id, succeeded, failed, records, duration_s, concurrency
 | order by timestamp desc
 ```
+
+### Performance tuning
+
+Endpoints worden parallel opgehaald binnen één run. Het maximum aantal gelijktijdige requests is configureerbaar via de App Setting `POLL_CONCURRENCY` (default `5`). Verhoog voorzichtig — te hoog risico op tenant-wide throttling (429).
 
 ---
 
@@ -200,8 +206,8 @@ infra/                — Bicep modules (infrastructuur)
   modules/            — Kern-modules (workspace, dcr, function-app, etc.)
   scripts/            — Bootstrap scripts (app role assignments)
 function-app/         — Azure Function App (Python)
-  engine/             — Polling engine
-  config/             — Endpoint configuratie
+  polling/            — Polling engine (engine, clients, ingestion, state)
+  config/             — Endpoint configuratie (fallback)
   tests/              — Pytest tests
 workbooks/            — Azure Monitor Workbook templates
 docs/                 — Documentatie
