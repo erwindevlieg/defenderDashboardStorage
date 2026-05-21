@@ -1,219 +1,182 @@
 # Defender Dashboard Storage
 
-Platform voor het opslaan van historische data uit Microsoft Defender XDR en Intune APIs, zodat trends en KPIs beschikbaar zijn voor dashboards.
+Platform for storing historical data from Microsoft Defender XDR and Intune APIs, so that trends and KPIs are available for dashboards.
 
-## Snel starten
+> **Documentation lives in the [Wiki](https://github.com/erwindevlieg/defenderDashboardStorage/wiki).** This README only covers the quick start.
 
-### Stap 1 — Deploy to Azure
+## Quick start
+
+### Step 1 — Deploy to Azure
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ferwindevlieg%2FdefenderDashboardStorage%2Fmain%2Fazuredeploy.json)
 
-Maak eerst een resource group aan (bijv. `rg-defender-dashboard` in `West Europe`), klik op de knop hierboven, en vul de parameters in.
+Create a resource group first (e.g. `rg-defender-dashboard` in `West Europe`), click the button above, and fill in the parameters.
 
-### Stap 2 — Wat moet ik invullen?
+### Step 2 — What do I need to fill in?
 
-| Parameter | Wat invullen | Verplicht |
+| Parameter | What to fill in | Required |
 | --- | --- | --- |
-| `resourceToken` | Kort uniek token voor resource namen, bijv. `prod01` (3-10 tekens) | ✅ |
-| `location` | Azure regio — standaard de locatie van je resource group | |
-| `repoUrl` | URL van je fork/clone, bijv. `https://github.com/jouw-user/defenderDashboardStorage` — dan wordt de Python code automatisch gedeployed | |
-| `repoBranch` | Branch voor code-deployment — standaard `main` | |
-| `scriptRunnerIdentityId` | Resource ID van een bestaande User-Assigned Managed Identity met `AppRoleAssignment.ReadWrite.All`. Formaat: `/subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{naam}`. Als ingevuld worden API-permissies automatisch toegewezen. Laat leeg voor handmatige toewijzing (zie `docs/bootstrap.md`). | |
+| `resourceToken` | Short unique token for resource names, e.g. `prod01` (3–10 chars) | ✅ |
+| `location` | Azure region — defaults to the resource group's location | |
+| `repoUrl` | URL of your fork/clone, e.g. `https://github.com/your-user/defenderDashboardStorage` — Python code is then auto-deployed | |
+| `repoBranch` | Branch for code deployment — defaults to `main` | |
+| `scriptRunnerIdentityId` | Resource ID of an existing User-Assigned Managed Identity with `AppRoleAssignment.ReadWrite.All`. Format: `/subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{name}`. If filled, API permissions are auto-assigned. Leave empty for manual assignment (see [Bootstrap](https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Bootstrap)). | |
 
 ---
 
-## Wat doet de Deploy knop automatisch?
+## What does the Deploy button do automatically?
 
-De knop deployt de **volledige infrastructuur** in één keer:
+The button deploys the **entire infrastructure** in one go:
 
-| Wat | Resource | Automatisch? |
+| What | Resource | Automatic? |
 | --- | --- | --- |
-| Managed Identity | `uai-defender-dashboard-<token>` | ✅ Altijd |
-| Log Analytics Workspace | `law-defender-dashboard-<token>` met 14 custom tabellen | ✅ Altijd |
-| Data Collection Endpoint + 3 DCRs | Data-ingestie pipeline | ✅ Altijd |
-| Function App | `func-defender-dashboard-<token>` (Python 3.11, Flex Consumption) | ✅ Altijd |
-| Storage Account | Voor Function App deployment packages | ✅ Altijd |
-| App Configuration | Endpoint configuratie store | ✅ Altijd |
-| Application Insights + Alerts | Monitoring en foutmeldingen | ✅ Altijd |
-| Function App **code** | Python code uit je GitHub repo | ✅ Als `repoUrl` is ingevuld |
-| API-permissies (app roles) | Defender + Graph API-toegang voor de Managed Identity | ✅ Als `scriptRunnerIdentityId` is ingevuld |
+| Managed Identity | `uai-defender-dashboard-<token>` | ✅ Always |
+| Log Analytics Workspace | `law-defender-dashboard-<token>` with 14 custom tables | ✅ Always |
+| Data Collection Endpoint + 3 DCRs | Data-ingestion pipeline | ✅ Always |
+| Function App | `func-defender-dashboard-<token>` (Python 3.11, Flex Consumption) | ✅ Always |
+| Storage Account | For Function App deployment packages | ✅ Always |
+| App Configuration | Endpoint configuration store | ✅ Always |
+| Application Insights + Alerts | Monitoring and failure notifications | ✅ Always |
+| Function App **code** | Python code from your GitHub repo | ✅ When `repoUrl` is set |
+| API permissions (app roles) | Defender + Graph API access for the Managed Identity | ✅ When `scriptRunnerIdentityId` is set |
 
 ---
 
-## Wat moet ik nog handmatig doen?
+## What do I still need to do manually?
 
-Dat hangt af van welke optionele parameters je hebt ingevuld:
+Depends on which optional parameters you filled in:
 
-### ✅ `repoUrl` ingevuld → niets te doen
+### ✅ `repoUrl` set → nothing to do
 
-De Function App code wordt automatisch uit GitHub gepulled.
+The Function App code is pulled automatically from GitHub.
 
-### ❌ `repoUrl` niet ingevuld → Function App code deployen
+### ❌ `repoUrl` not set → deploy the Function App code
 
 ```bash
 cd function-app
 func azure functionapp publish <functionAppName> --python
 ```
 
-Of via VS Code: open `function-app/` en gebruik de Azure Functions extensie.
+Or via VS Code: open `function-app/` and use the Azure Functions extension.
 
-### ✅ `scriptRunnerIdentityId` ingevuld → niets te doen
+### ✅ `scriptRunnerIdentityId` set → nothing to do
 
-De API-permissies worden automatisch toegewezen via een deployment script.
+API permissions are assigned automatically via a deployment script.
 
-### ❌ `scriptRunnerIdentityId` niet ingevuld → API-permissies handmatig toewijzen
+### ❌ `scriptRunnerIdentityId` not set → assign API permissions manually
 
-Dit is de **meest voorkomende** situatie. De Managed Identity heeft app roles nodig op Defender en Graph APIs. Zonder deze stap kan de Function App **geen data ophalen**.
+This is the **most common** situation. The Managed Identity needs app roles on the Defender and Graph APIs. Without this step the Function App **cannot fetch data**.
 
-Je hebt de rol **Privileged Role Administrator** nodig (of Global Admin) en de [Microsoft Graph PowerShell SDK](https://learn.microsoft.com/en-us/powershell/microsoftgraph/installation):
+You need the **Privileged Role Administrator** role (or Global Admin) and the [Microsoft Graph PowerShell SDK](https://learn.microsoft.com/en-us/powershell/microsoftgraph/installation):
 
 ```powershell
-# 1. Installeer Microsoft Graph module (eenmalig)
+# 1. Install the Microsoft Graph module (once)
 Install-Module Microsoft.Graph.Applications -Scope CurrentUser
 
-# 2. Login als Privileged Role Administrator
+# 2. Sign in as Privileged Role Administrator
 Connect-MgGraph -Scopes "AppRoleAssignment.ReadWrite.All"
 
-# 3. Zoek de principal ID van de Managed Identity
+# 3. Look up the principal ID of the Managed Identity
 $uamiPrincipalId = (az identity show `
   -g <resourceGroup> `
   -n uai-defender-dashboard-<resourceToken> `
   --query principalId -o tsv)
 
-# 4. Wijs alle Defender + Graph API-permissies toe
+# 4. Assign all Defender + Graph API permissions
 .\infra\scripts\assign-app-roles.ps1 -ManagedIdentityPrincipalId $uamiPrincipalId
 ```
 
-Het script wijst deze permissies toe:
+The script assigns these permissions:
 
-| API | Permissies |
+| API | Permissions |
 | --- | --- |
 | **Defender XDR** | Score.Read.All, Machine.Read.All, Vulnerability.Read.All, Alert.Read.All, SecurityRecommendation.Read.All, Software.Read.All, AdvancedQuery.Read.All |
 | **Microsoft Graph** | SecurityEvents.Read.All, DeviceManagementManagedDevices.Read.All, DeviceManagementConfiguration.Read.All, DeviceManagementApps.Read.All |
 
-> ⚠️ Na het toewijzen kan het tot **1 uur** duren voordat tokens de nieuwe rollen bevatten.
+> ⚠️ After assignment it can take up to **1 hour** before tokens contain the new roles.
 
 ---
 
-## Verificatie
+## Verification
 
-Na alle stappen:
+After all steps:
 
-1. **Tabellen** — Controleer in Azure Portal → Log Analytics Workspace → Tables dat alle `_CL` tabellen bestaan
-2. **Eerste data** — De Function App draait dagelijks om 06:00 UTC. Trigger handmatig via Azure Portal → Function App → Functions → Timer trigger → "Run"
-3. **Monitoring** — Check Application Insights voor eventuele fouten (bijv. `403 Forbidden` = app roles nog niet actief)
-
----
-
-## Troubleshooting
-
-| Symptoom | Oorzaak | Oplossing |
-| --- | --- | --- |
-| `403 Forbidden` op Defender of Graph endpoints | App roles nog niet actief of niet toegewezen | Wacht tot 1 uur na toewijzing; verifieer via `Get-MgServicePrincipalAppRoleAssignment` |
-| `429 Too Many Requests` herhaaldelijk in logs | Tenant-wide throttling | Engine retried automatisch met jitter; bij aanhoudend throttlen: verlaag run-frequentie of verminder endpoints per run |
-| Records ontbreken stilzwijgend in Log Analytics-tabel | Stream-schema in DCR ≠ tabel-schema | Voeg `expected_columns` toe aan endpoint en check Application Insights op `Schema-mismatch` warnings |
-| `INGESTION_STRICT_SCHEMA=true` laat upload falen | Strict mode is opt-in | Zet env var op `false` (default) of fix het schema |
-| Function App start niet | DCE_ENDPOINT, DCR_*_ID of APP_CONFIG_ENDPOINT ontbreekt | Controleer App Settings van de Function App |
-| Geen data na deployment | `repoUrl` niet ingevuld én code niet handmatig gepubliceerd | `func azure functionapp publish <naam> --python` |
-| Polling-summary ontbreekt in App Insights | `custom_dimensions` worden gefilterd | Query: `traces \| where customDimensions has "schedule"` |
-
-### Logging samenvatting
-
-Elke run schrijft één samenvattingsregel met `custom_dimensions` voor App Insights. Elke run heeft een unieke `run_id` (uuid4) die in alle logs van die run terugkomt — handig om endpoint-niveau logs te correleren aan de samenvatting. Voorbeeld-KQL:
-
-```kql
-traces
-| where message startswith "Polling summary"
-| extend
-    schedule    = tostring(customDimensions.schedule),
-    run_id      = tostring(customDimensions.run_id),
-    succeeded   = toint(customDimensions.succeeded),
-    failed      = toint(customDimensions.failed),
-    records     = toint(customDimensions.records_total),
-    duration_s  = todouble(customDimensions.duration_seconds),
-    concurrency = toint(customDimensions.concurrency)
-| project timestamp, schedule, run_id, succeeded, failed, records, duration_s, concurrency
-| order by timestamp desc
-```
-
-### Performance tuning
-
-Endpoints worden parallel opgehaald binnen één run. Het maximum aantal gelijktijdige requests is configureerbaar via de App Setting `POLL_CONCURRENCY` (default `5`). Verhoog voorzichtig — te hoog risico op tenant-wide throttling (429).
+1. **Tables** — In the Azure Portal → Log Analytics Workspace → Tables, verify that all `_CL` tables exist.
+2. **First data** — The Function App runs daily at 06:00 UTC. Trigger it manually via Azure Portal → Function App → Functions → Timer trigger → "Run".
+3. **Monitoring** — Check Application Insights for any errors (e.g. `403 Forbidden` = app roles not yet active).
 
 ---
 
-## Architectuur
+## Architecture (at a glance)
 
 ```text
 ┌─────────────────┐     ┌───────────────────┐     ┌────────────────────┐
-│  Defender XDR    │────▶│   Function App    │────▶│  Log Analytics     │
-│  Graph API       │     │   (Python 3.11)   │     │  Workspace         │
-│  Intune API      │     │   Flex Consumption│     │  14 custom tabellen│
+│  Defender XDR   │────▶│   Function App    │────▶│  Log Analytics     │
+│  Graph API      │     │   (Python 3.11)   │     │  Workspace         │
+│  Intune API     │     │   Flex Consumption│     │  14 custom tables  │
 └─────────────────┘     └───────┬───────────┘     └────────┬───────────┘
                                 │                          │
                     ┌───────────┴──────────┐    ┌──────────┴──────────┐
                     │ App Configuration    │    │ DCE + 3 DCRs        │
-                    │ (endpoint config)    │    │ (data-ingestie)     │
+                    │ (endpoint config)    │    │ (data ingestion)    │
                     └──────────────────────┘    └─────────────────────┘
 ```
 
-- **Auth:** User-Assigned Managed Identity (geen secrets)
-- **Monitoring:** Application Insights + alerting bij fouten
-- **Dashboards:** Azure Monitor Workbooks (zie `workbooks/` map)
+- **Auth:** User-Assigned Managed Identity (no secrets)
+- **Monitoring:** Application Insights + alerts on failures
+- **Dashboards:** Azure Monitor Workbooks (see `workbooks/` folder)
 
-## Databron toevoegen
+For full architecture, runbook, troubleshooting and connector recipes see the [Wiki](https://github.com/erwindevlieg/defenderDashboardStorage/wiki):
 
-Voeg een nieuwe databron toe door drie bestanden aan te passen:
+- [Architecture](https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Architecture)
+- [Bootstrap](https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Bootstrap)
+- [Runbook](https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Runbook) — troubleshooting, KQL examples, alerts
+- [Adding Connectors](https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Adding-Connectors)
 
-1. `infra/modules/workspace.bicep` — nieuwe `_CL` tabel
-2. `infra/modules/dcr.bicep` — stream + data flow in de juiste DCR
-3. `function-app/config/endpoints.json` én `infra/modules/app-config.bicep` — polling configuratie
-
-Daarna `azuredeploy.json` hercompileren en opnieuw deployen. Zie [docs/adding-connectors.md](docs/adding-connectors.md) voor het volledige stappenplan met voorbeeld.
-
-## Lokaal ontwikkelen
+## Local development
 
 ```bash
 cd function-app
 
-# Dev dependencies installeren (lint, test, doc coverage)
+# Install dev dependencies (lint, test, doc coverage)
 pip install -r requirements-dev.txt
 
-# Pre-commit hooks activeren (ruff, markdownlint, interrogate, ...)
-# Vanuit repo-root:
+# Activate pre-commit hooks (ruff, markdownlint, interrogate, ...)
+# From repo root:
 cd ..
 pre-commit install
 
-# Tests draaien
+# Run tests
 cd function-app
 pytest tests/ -v
 
-# Handmatig lint
+# Manual lint
 ruff check .
 ruff format --check .
 mypy polling
 interrogate -v polling
 
-# Alle hooks ineens (markdown, yaml, python) over de hele repo:
+# All hooks at once (markdown, yaml, python) over the entire repo:
 cd ..
 pre-commit run --all-files
 ```
 
-## Projectstructuur
+## Project structure
 
 ```text
-infra/                — Bicep modules (infrastructuur)
-  modules/            — Kern-modules (workspace, dcr, function-app, etc.)
+infra/                — Bicep modules (infrastructure)
+  modules/            — Core modules (workspace, dcr, function-app, etc.)
   scripts/            — Bootstrap scripts (app role assignments)
 function-app/         — Azure Function App (Python)
   polling/            — Polling engine (engine, clients, ingestion, state)
-  config/             — Endpoint configuratie (fallback)
+  config/             — Endpoint configuration (fallback)
   tests/              — Pytest tests
 workbooks/            — Azure Monitor Workbook templates
-docs/                 — Documentatie
-azuredeploy.json      — Gecompileerde ARM template (voor Deploy to Azure knop)
+azuredeploy.json      — Compiled ARM template (for the Deploy-to-Azure button)
 ```
 
-## Licentie
+Documentation: [GitHub Wiki](https://github.com/erwindevlieg/defenderDashboardStorage/wiki).
+
+## License
 
 MIT

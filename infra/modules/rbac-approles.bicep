@@ -3,19 +3,19 @@
 // Wijst Defender/Graph app roles toe aan de Managed Identity
 // ============================================================
 
-@description('Locatie voor alle resources')
+@description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Tags voor alle resources')
+@description('Tags applied to all resources')
 param tags object = {}
 
-@description('Principal ID (Object ID) van de Managed Identity')
+@description('Principal ID (Object ID) of the Managed Identity')
 param identityPrincipalId string
 
 @description('Resource ID van een UAMI die de deployment script uitvoert (moet AppRoleAssignment.ReadWrite.All hebben)')
 param scriptRunnerIdentityId string
 
-@description('Timestamp voor force-rerun (gebruik utcNow())')
+@description('Timestamp for force-rerun (use utcNow())')
 param utcValue string = utcNow()
 
 resource assignAppRoles 'Microsoft.Resources/deploymentScripts@2023-08-01' = {

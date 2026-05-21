@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "14605593862921856996"
+      "templateHash": "16248460845385418143"
     }
   },
   "parameters": {
@@ -13,7 +13,7 @@
       "type": "string",
       "defaultValue": "[resourceGroup().location]",
       "metadata": {
-        "description": "Locatie voor alle resources"
+        "description": "Location for all resources"
       }
     },
     "resourceToken": {
@@ -21,7 +21,7 @@
       "minLength": 3,
       "maxLength": 10,
       "metadata": {
-        "description": "Unieke token voor resource namen (gebruik bijv. een korte hash)"
+        "description": "Unique token for resource names (e.g. a short hash)"
       }
     },
     "tags": {
@@ -31,35 +31,35 @@
         "managedBy": "bicep"
       },
       "metadata": {
-        "description": "Tags voor alle resources"
+        "description": "Tags applied to all resources"
       }
     },
     "scriptRunnerIdentityId": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "(Optioneel) Resource ID van een bestaande User-Assigned Managed Identity die het deployment script mag uitvoeren.\nDeze UAMI moet de Microsoft Graph app role \"AppRoleAssignment.ReadWrite.All\" hebben.\nAls je dit invult, worden de Defender- en Graph API-permissies automatisch toegewezen aan de polling identity.\nFormaat: /subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{naam}\nLaat leeg om API-permissies handmatig toe te wijzen (zie docs/bootstrap.md).\n"
+        "description": "(Optional) Resource ID of an existing User-Assigned Managed Identity that may run the deployment script.\nThis UAMI must hold the Microsoft Graph app role \"AppRoleAssignment.ReadWrite.All\".\nIf set, Defender and Graph API permissions are assigned automatically to the polling identity.\nFormat: /subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{name}\nLeave empty to assign API permissions manually (see the Bootstrap wiki page: https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Bootstrap).\n"
       }
     },
     "repoUrl": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "GitHub repository URL voor automatische Function App code-deployment"
+        "description": "GitHub repository URL for automatic Function App code deployment"
       }
     },
     "repoBranch": {
       "type": "string",
       "defaultValue": "main",
       "metadata": {
-        "description": "Branch voor code-deployment"
+        "description": "Branch for code deployment"
       }
     },
     "alertEmail": {
       "type": "string",
       "defaultValue": "",
       "metadata": {
-        "description": "E-mailadres voor alert notificaties (bijv. bij mislukte data-ingestie)"
+        "description": "Email address for alert notifications (e.g. failed data ingestion)"
       }
     },
     "retentionInDays": {
@@ -68,7 +68,7 @@
       "minValue": 30,
       "maxValue": 730,
       "metadata": {
-        "description": "Retentie in dagen voor Log Analytics data (standaard 90)"
+        "description": "Retention in days for Log Analytics data (default 90)"
       }
     }
   },
@@ -100,7 +100,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "7458376572508033385"
+              "templateHash": "16705626046433507989"
             }
           },
           "parameters": {
@@ -108,20 +108,20 @@
               "type": "string",
               "defaultValue": "[resourceGroup().location]",
               "metadata": {
-                "description": "Locatie voor alle resources"
+                "description": "Location for all resources"
               }
             },
             "resourceToken": {
               "type": "string",
               "metadata": {
-                "description": "Unieke token voor resource namen"
+                "description": "Unique token for resource names"
               }
             },
             "tags": {
               "type": "object",
               "defaultValue": {},
               "metadata": {
-                "description": "Tags voor alle resources"
+                "description": "Tags applied to all resources"
               }
             }
           },
@@ -138,28 +138,28 @@
             "identityId": {
               "type": "string",
               "metadata": {
-                "description": "Resource ID van de Managed Identity"
+                "description": "Resource ID of the Managed Identity"
               },
               "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uai-defender-dashboard-{0}', parameters('resourceToken')))]"
             },
             "principalId": {
               "type": "string",
               "metadata": {
-                "description": "Principal ID (Object ID) van de Managed Identity"
+                "description": "Principal ID (Object ID) of the Managed Identity"
               },
               "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uai-defender-dashboard-{0}', parameters('resourceToken'))), '2023-01-31').principalId]"
             },
             "clientId": {
               "type": "string",
               "metadata": {
-                "description": "Client ID van de Managed Identity"
+                "description": "Client ID of the Managed Identity"
               },
               "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('uai-defender-dashboard-{0}', parameters('resourceToken'))), '2023-01-31').clientId]"
             },
             "identityName": {
               "type": "string",
               "metadata": {
-                "description": "Naam van de Managed Identity"
+                "description": "Name of the Managed Identity"
               },
               "value": "[format('uai-defender-dashboard-{0}', parameters('resourceToken'))]"
             }
@@ -197,7 +197,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "2705583222557590677"
+              "templateHash": "15482061558571221961"
             }
           },
           "parameters": {
@@ -205,27 +205,27 @@
               "type": "string",
               "defaultValue": "[resourceGroup().location]",
               "metadata": {
-                "description": "Locatie voor alle resources"
+                "description": "Location for all resources"
               }
             },
             "workspaceName": {
               "type": "string",
               "metadata": {
-                "description": "Naam van de workspace"
+                "description": "Name of the workspace"
               }
             },
             "tags": {
               "type": "object",
               "defaultValue": {},
               "metadata": {
-                "description": "Tags voor alle resources"
+                "description": "Tags applied to all resources"
               }
             },
             "dailyQuotaGb": {
               "type": "int",
               "defaultValue": 10,
               "metadata": {
-                "description": "Dagelijks ingestie quotum in GB (bescherming tegen kosten-explosie)"
+                "description": "Daily ingestion quota in GB (protection against runaway cost)"
               }
             },
             "retentionInDays": {
@@ -234,7 +234,7 @@
               "minValue": 30,
               "maxValue": 730,
               "metadata": {
-                "description": "Retentie in dagen voor de workspace (standaard 90, CIS 5.3.1 minimum)"
+                "description": "Retention in days for the workspace (default 90, CIS 5.3.1 minimum)"
               }
             }
           },
@@ -1266,21 +1266,21 @@
             "workspaceId": {
               "type": "string",
               "metadata": {
-                "description": "Resource ID van de workspace"
+                "description": "Resource ID of the workspace"
               },
               "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
             },
             "workspaceName": {
               "type": "string",
               "metadata": {
-                "description": "Naam van de workspace"
+                "description": "Name of the workspace"
               },
               "value": "[parameters('workspaceName')]"
             },
             "workspaceCustomerId": {
               "type": "string",
               "metadata": {
-                "description": "Workspace customer ID (voor queries)"
+                "description": "Workspace customer ID (used in queries)"
               },
               "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName')), '2023-09-01').customerId]"
             }
@@ -1318,7 +1318,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "4368343783234419726"
+              "templateHash": "12138832827483355578"
             }
           },
           "parameters": {
@@ -1326,26 +1326,26 @@
               "type": "string",
               "defaultValue": "[resourceGroup().location]",
               "metadata": {
-                "description": "Locatie voor alle resources"
+                "description": "Location for all resources"
               }
             },
             "resourceToken": {
               "type": "string",
               "metadata": {
-                "description": "Unieke token voor resource namen"
+                "description": "Unique token for resource names"
               }
             },
             "tags": {
               "type": "object",
               "defaultValue": {},
               "metadata": {
-                "description": "Tags voor alle resources"
+                "description": "Tags applied to all resources"
               }
             },
             "workspaceId": {
               "type": "string",
               "metadata": {
-                "description": "Resource ID van de Log Analytics workspace"
+                "description": "Resource ID of the Log Analytics workspace"
               }
             }
           },
@@ -2581,7 +2581,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "6740019454146196361"
+              "templateHash": "10858118698325931678"
             }
           },
           "parameters": {
@@ -2589,33 +2589,33 @@
               "type": "string",
               "defaultValue": "[resourceGroup().location]",
               "metadata": {
-                "description": "Locatie voor alle resources"
+                "description": "Location for all resources"
               }
             },
             "resourceToken": {
               "type": "string",
               "metadata": {
-                "description": "Unieke token voor resource namen"
+                "description": "Unique token for resource names"
               }
             },
             "tags": {
               "type": "object",
               "defaultValue": {},
               "metadata": {
-                "description": "Tags voor alle resources"
+                "description": "Tags applied to all resources"
               }
             },
             "workspaceId": {
               "type": "string",
               "metadata": {
-                "description": "Resource ID van de Log Analytics workspace"
+                "description": "Resource ID of the Log Analytics workspace"
               }
             },
             "alertEmail": {
               "type": "string",
               "defaultValue": "",
               "metadata": {
-                "description": "E-mailadres voor alert notificaties (optioneel, lege string = geen e-mail)"
+                "description": "Email address for alert notifications (optional, empty string = no email)"
               }
             }
           },
@@ -2818,7 +2818,7 @@
             "appInsightsName": {
               "type": "string",
               "metadata": {
-                "description": "Application Insights naam"
+                "description": "Application Insights name"
               },
               "value": "[format('appi-defender-dashboard-{0}', parameters('resourceToken'))]"
             }
@@ -2859,7 +2859,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "15548462357221667583"
+              "templateHash": "10880663160471318299"
             }
           },
           "parameters": {
@@ -2867,26 +2867,26 @@
               "type": "string",
               "defaultValue": "[resourceGroup().location]",
               "metadata": {
-                "description": "Locatie voor alle resources"
+                "description": "Location for all resources"
               }
             },
             "resourceToken": {
               "type": "string",
               "metadata": {
-                "description": "Unieke token voor resource namen"
+                "description": "Unique token for resource names"
               }
             },
             "tags": {
               "type": "object",
               "defaultValue": {},
               "metadata": {
-                "description": "Tags voor alle resources"
+                "description": "Tags applied to all resources"
               }
             },
             "identityPrincipalId": {
               "type": "string",
               "metadata": {
-                "description": "Principal ID van de Managed Identity (voor RBAC)"
+                "description": "Principal ID of the Managed Identity (for RBAC)"
               }
             }
           },
@@ -3058,14 +3058,14 @@
             "appConfigEndpoint": {
               "type": "string",
               "metadata": {
-                "description": "App Configuration Endpoint"
+                "description": "App Configuration endpoint URL"
               },
               "value": "[reference(resourceId('Microsoft.AppConfiguration/configurationStores', format('appcs-defender-dashboard-{0}', parameters('resourceToken'))), '2023-03-01').endpoint]"
             },
             "appConfigName": {
               "type": "string",
               "metadata": {
-                "description": "App Configuration naam"
+                "description": "App Configuration name"
               },
               "value": "[format('appcs-defender-dashboard-{0}', parameters('resourceToken'))]"
             }
@@ -3133,7 +3133,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "11036544044737568203"
+              "templateHash": "8542156347423744788"
             }
           },
           "parameters": {
@@ -3141,32 +3141,32 @@
               "type": "string",
               "defaultValue": "[resourceGroup().location]",
               "metadata": {
-                "description": "Locatie voor alle resources"
+                "description": "Location for all resources"
               }
             },
             "resourceToken": {
               "type": "string",
               "metadata": {
-                "description": "Unieke token voor resource namen"
+                "description": "Unique token for resource names"
               }
             },
             "tags": {
               "type": "object",
               "defaultValue": {},
               "metadata": {
-                "description": "Tags voor alle resources"
+                "description": "Tags applied to all resources"
               }
             },
             "identityId": {
               "type": "string",
               "metadata": {
-                "description": "Resource ID van de User-Assigned Managed Identity"
+                "description": "Resource ID of the User-Assigned Managed Identity"
               }
             },
             "identityClientId": {
               "type": "string",
               "metadata": {
-                "description": "Client ID van de User-Assigned Managed Identity"
+                "description": "Client ID of the User-Assigned Managed Identity"
               }
             },
             "appInsightsConnectionString": {
@@ -3203,21 +3203,21 @@
               "type": "string",
               "defaultValue": "",
               "metadata": {
-                "description": "App Configuration Endpoint"
+                "description": "App Configuration endpoint URL"
               }
             },
             "repoUrl": {
               "type": "string",
               "defaultValue": "",
               "metadata": {
-                "description": "GitHub repository URL voor automatische code-deployment (bijv. https://github.com/user/repo)"
+                "description": "GitHub repository URL for automatic code deployment (e.g. https://github.com/user/repo)"
               }
             },
             "repoBranch": {
               "type": "string",
               "defaultValue": "main",
               "metadata": {
-                "description": "Branch voor code-deployment"
+                "description": "Branch for code deployment"
               }
             }
           },
@@ -3432,7 +3432,7 @@
             "functionAppName": {
               "type": "string",
               "metadata": {
-                "description": "Function App naam"
+                "description": "Function App name"
               },
               "value": "[format('func-defender-dashboard-{0}', parameters('resourceToken'))]"
             },
@@ -3484,20 +3484,20 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "12859981796523471452"
+              "templateHash": "14810056537712817671"
             }
           },
           "parameters": {
             "workspaceId": {
               "type": "string",
               "metadata": {
-                "description": "Resource ID van de Log Analytics workspace"
+                "description": "Resource ID of the Log Analytics workspace"
               }
             },
             "functionAppPrincipalId": {
               "type": "string",
               "metadata": {
-                "description": "Principal ID van de Function App Managed Identity"
+                "description": "Principal ID of the Function App Managed Identity"
               }
             }
           },
@@ -3556,7 +3556,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "18270683580701379086"
+              "templateHash": "3577754167850070800"
             }
           },
           "parameters": {
@@ -3564,20 +3564,20 @@
               "type": "string",
               "defaultValue": "[resourceGroup().location]",
               "metadata": {
-                "description": "Locatie voor alle resources"
+                "description": "Location for all resources"
               }
             },
             "tags": {
               "type": "object",
               "defaultValue": {},
               "metadata": {
-                "description": "Tags voor alle resources"
+                "description": "Tags applied to all resources"
               }
             },
             "identityPrincipalId": {
               "type": "string",
               "metadata": {
-                "description": "Principal ID (Object ID) van de Managed Identity"
+                "description": "Principal ID (Object ID) of the Managed Identity"
               }
             },
             "scriptRunnerIdentityId": {
@@ -3590,7 +3590,7 @@
               "type": "string",
               "defaultValue": "[utcNow()]",
               "metadata": {
-                "description": "Timestamp voor force-rerun (gebruik utcNow())"
+                "description": "Timestamp for force-rerun (use utcNow())"
               }
             }
           },
@@ -3654,7 +3654,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "11638439056085444523"
+              "templateHash": "13310180836558451671"
             }
           },
           "parameters": {
@@ -3662,20 +3662,20 @@
               "type": "string",
               "defaultValue": "[resourceGroup().location]",
               "metadata": {
-                "description": "Locatie voor resources"
+                "description": "Location for resources"
               }
             },
             "workspaceId": {
               "type": "string",
               "metadata": {
-                "description": "Resource ID van de Log Analytics workspace"
+                "description": "Resource ID of the Log Analytics workspace"
               }
             },
             "tags": {
               "type": "object",
               "defaultValue": {},
               "metadata": {
-                "description": "Tags voor resources"
+                "description": "Tags applied to resources"
               }
             }
           },

@@ -1,18 +1,18 @@
 // ============================================================
-// main.bicep — Orchestrator voor Defender Dashboard Storage
+// main.bicep — Orchestrator for Defender Dashboard Storage
 // ============================================================
 
 targetScope = 'resourceGroup'
 
-@description('Locatie voor alle resources')
+@description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Unieke token voor resource namen (gebruik bijv. een korte hash)')
+@description('Unique token for resource names (e.g. a short hash)')
 @minLength(3)
 @maxLength(10)
 param resourceToken string
 
-@description('Tags voor alle resources')
+@description('Tags applied to all resources')
 param tags object = {
   project: 'defender-dashboard'
   managedBy: 'bicep'
@@ -20,27 +20,27 @@ param tags object = {
 
 // --- App Role Bootstrap ---
 @description('''
-(Optioneel) Resource ID van een bestaande User-Assigned Managed Identity die het deployment script mag uitvoeren.
-Deze UAMI moet de Microsoft Graph app role "AppRoleAssignment.ReadWrite.All" hebben.
-Als je dit invult, worden de Defender- en Graph API-permissies automatisch toegewezen aan de polling identity.
-Formaat: /subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{naam}
-Laat leeg om API-permissies handmatig toe te wijzen (zie docs/bootstrap.md).
+(Optional) Resource ID of an existing User-Assigned Managed Identity that may run the deployment script.
+This UAMI must hold the Microsoft Graph app role "AppRoleAssignment.ReadWrite.All".
+If set, Defender and Graph API permissions are assigned automatically to the polling identity.
+Format: /subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{name}
+Leave empty to assign API permissions manually (see the Bootstrap wiki page: https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Bootstrap).
 ''')
 param scriptRunnerIdentityId string = ''
 
 // --- Source Control ---
-@description('GitHub repository URL voor automatische Function App code-deployment')
+@description('GitHub repository URL for automatic Function App code deployment')
 param repoUrl string = ''
 
-@description('Branch voor code-deployment')
+@description('Branch for code deployment')
 param repoBranch string = 'main'
 
-// --- Notificaties ---
-@description('E-mailadres voor alert notificaties (bijv. bij mislukte data-ingestie)')
+// --- Notifications ---
+@description('Email address for alert notifications (e.g. failed data ingestion)')
 param alertEmail string = ''
 
-// --- Retentie ---
-@description('Retentie in dagen voor Log Analytics data (standaard 90)')
+// --- Retention ---
+@description('Retention in days for Log Analytics data (default 90)')
 @minValue(30)
 @maxValue(730)
 param retentionInDays int = 90

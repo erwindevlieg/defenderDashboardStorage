@@ -2,16 +2,16 @@
 // app-config.bicep — Azure App Configuration
 // ============================================================
 
-@description('Locatie voor alle resources')
+@description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Unieke token voor resource namen')
+@description('Unique token for resource names')
 param resourceToken string
 
-@description('Tags voor alle resources')
+@description('Tags applied to all resources')
 param tags object = {}
 
-@description('Principal ID van de Managed Identity (voor RBAC)')
+@description('Principal ID of the Managed Identity (for RBAC)')
 param identityPrincipalId string
 
 // ============================================================
@@ -150,8 +150,8 @@ resource kvIntuneApps 'Microsoft.AppConfiguration/configurationStores/keyValues@
 // ============================================================
 // Outputs
 // ============================================================
-@description('App Configuration Endpoint')
+@description('App Configuration endpoint URL')
 output appConfigEndpoint string = appConfig.properties.endpoint
 
-@description('App Configuration naam')
+@description('App Configuration name')
 output appConfigName string = appConfig.name

@@ -2,16 +2,16 @@
 // dcr.bicep — Data Collection Endpoint + Rules
 // ============================================================
 
-@description('Locatie voor alle resources')
+@description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Unieke token voor resource namen')
+@description('Unique token for resource names')
 param resourceToken string
 
-@description('Tags voor alle resources')
+@description('Tags applied to all resources')
 param tags object = {}
 
-@description('Resource ID van de Log Analytics workspace')
+@description('Resource ID of the Log Analytics workspace')
 param workspaceId string
 
 // ============================================================

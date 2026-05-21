@@ -2,13 +2,13 @@
 // workbooks.bicep — Azure Monitor Workbooks (auto-deploy)
 // ============================================================
 
-@description('Locatie voor resources')
+@description('Location for resources')
 param location string = resourceGroup().location
 
-@description('Resource ID van de Log Analytics workspace')
+@description('Resource ID of the Log Analytics workspace')
 param workspaceId string
 
-@description('Tags voor resources')
+@description('Tags applied to resources')
 param tags object = {}
 
 // ============================================================

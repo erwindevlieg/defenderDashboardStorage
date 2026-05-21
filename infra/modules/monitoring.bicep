@@ -2,19 +2,19 @@
 // monitoring.bicep — Application Insights + Alert Rules
 // ============================================================
 
-@description('Locatie voor alle resources')
+@description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Unieke token voor resource namen')
+@description('Unique token for resource names')
 param resourceToken string
 
-@description('Tags voor alle resources')
+@description('Tags applied to all resources')
 param tags object = {}
 
-@description('Resource ID van de Log Analytics workspace')
+@description('Resource ID of the Log Analytics workspace')
 param workspaceId string
 
-@description('E-mailadres voor alert notificaties (optioneel, lege string = geen e-mail)')
+@description('Email address for alert notifications (optional, empty string = no email)')
 param alertEmail string = ''
 
 // ============================================================
@@ -213,5 +213,5 @@ output appInsightsConnectionString string = appInsights.properties.ConnectionStr
 @description('Application Insights Instrumentation Key')
 output appInsightsInstrumentationKey string = appInsights.properties.InstrumentationKey
 
-@description('Application Insights naam')
+@description('Application Insights name')
 output appInsightsName string = appInsights.name

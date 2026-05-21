@@ -2,19 +2,19 @@
 // function-app.bicep — Azure Function App (Flex Consumption)
 // ============================================================
 
-@description('Locatie voor alle resources')
+@description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Unieke token voor resource namen')
+@description('Unique token for resource names')
 param resourceToken string
 
-@description('Tags voor alle resources')
+@description('Tags applied to all resources')
 param tags object = {}
 
-@description('Resource ID van de User-Assigned Managed Identity')
+@description('Resource ID of the User-Assigned Managed Identity')
 param identityId string
 
-@description('Client ID van de User-Assigned Managed Identity')
+@description('Client ID of the User-Assigned Managed Identity')
 param identityClientId string
 
 @description('Application Insights Connection String')
@@ -32,13 +32,13 @@ param dcrWeeklySnapshotsImmutableId string
 @description('DCR Intune Immutable ID')
 param dcrIntuneImmutableId string
 
-@description('App Configuration Endpoint')
+@description('App Configuration endpoint URL')
 param appConfigEndpoint string = ''
 
-@description('GitHub repository URL voor automatische code-deployment (bijv. https://github.com/user/repo)')
+@description('GitHub repository URL for automatic code deployment (e.g. https://github.com/user/repo)')
 param repoUrl string = ''
 
-@description('Branch voor code-deployment')
+@description('Branch for code deployment')
 param repoBranch string = 'main'
 
 // ============================================================
@@ -187,7 +187,7 @@ resource sourceControl 'Microsoft.Web/sites/sourcecontrols@2024-04-01' = if (!em
 // ============================================================
 // Outputs
 // ============================================================
-@description('Function App naam')
+@description('Function App name')
 output functionAppName string = functionApp.name
 
 @description('Function App resource ID')

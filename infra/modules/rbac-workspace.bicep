@@ -2,10 +2,10 @@
 // rbac-workspace.bicep — RBAC voor workspace toegang
 // ============================================================
 
-@description('Resource ID van de Log Analytics workspace')
+@description('Resource ID of the Log Analytics workspace')
 param workspaceId string
 
-@description('Principal ID van de Function App Managed Identity')
+@description('Principal ID of the Function App Managed Identity')
 param functionAppPrincipalId string
 
 // --- Rol-definitie IDs ---

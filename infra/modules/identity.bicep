@@ -2,13 +2,13 @@
 // identity.bicep — User-Assigned Managed Identity
 // ============================================================
 
-@description('Locatie voor alle resources')
+@description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Unieke token voor resource namen')
+@description('Unique token for resource names')
 param resourceToken string
 
-@description('Tags voor alle resources')
+@description('Tags applied to all resources')
 param tags object = {}
 
 resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
@@ -17,14 +17,14 @@ resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@
   tags: tags
 }
 
-@description('Resource ID van de Managed Identity')
+@description('Resource ID of the Managed Identity')
 output identityId string = userAssignedIdentity.id
 
-@description('Principal ID (Object ID) van de Managed Identity')
+@description('Principal ID (Object ID) of the Managed Identity')
 output principalId string = userAssignedIdentity.properties.principalId
 
-@description('Client ID van de Managed Identity')
+@description('Client ID of the Managed Identity')
 output clientId string = userAssignedIdentity.properties.clientId
 
-@description('Naam van de Managed Identity')
+@description('Name of the Managed Identity')
 output identityName string = userAssignedIdentity.name

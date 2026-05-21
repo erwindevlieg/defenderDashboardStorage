@@ -2,19 +2,19 @@
 // workspace.bicep — Log Analytics Workspace + Custom Tabellen
 // ============================================================
 
-@description('Locatie voor alle resources')
+@description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Naam van de workspace')
+@description('Name of the workspace')
 param workspaceName string
 
-@description('Tags voor alle resources')
+@description('Tags applied to all resources')
 param tags object = {}
 
-@description('Dagelijks ingestie quotum in GB (bescherming tegen kosten-explosie)')
+@description('Daily ingestion quota in GB (protection against runaway cost)')
 param dailyQuotaGb int = 10
 
-@description('Retentie in dagen voor de workspace (standaard 90, CIS 5.3.1 minimum)')
+@description('Retention in days for the workspace (default 90, CIS 5.3.1 minimum)')
 @minValue(30)
 @maxValue(730)
 param retentionInDays int = 90
@@ -526,11 +526,11 @@ resource tableIntuneCompliance 'Microsoft.OperationalInsights/workspaces/tables@
 // ============================================================
 // Outputs
 // ============================================================
-@description('Resource ID van de workspace')
+@description('Resource ID of the workspace')
 output workspaceId string = workspace.id
 
-@description('Naam van de workspace')
+@description('Name of the workspace')
 output workspaceName string = workspace.name
 
-@description('Workspace customer ID (voor queries)')
+@description('Workspace customer ID (used in queries)')
 output workspaceCustomerId string = workspace.properties.customerId
