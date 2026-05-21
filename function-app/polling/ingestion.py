@@ -1,6 +1,6 @@
-"""LogsIngestionClient wrapper met batching, retry en schema-validatie.
+"""LogsIngestionClient wrapper with batching, retry and schema validation.
 
-Schrijft records naar Log Analytics via de Logs Ingestion API (DCR/DCE).
+Writes records to Log Analytics via the Logs Ingestion API (DCR/DCE).
 """
 
 from __future__ import annotations
@@ -9,17 +9,16 @@ import logging
 import os
 from collections.abc import Iterable
 
-from azure.core.credentials import TokenCredential
-from azure.monitor.ingestion import LogsIngestionClient as AzureLogsIngestionClient
+from azure.core.credentials_async import AsyncTokenCredential
+from azure.monitor.ingestion.aio import (
+    LogsIngestionClient as AzureLogsIngestionClient,
+)
 
 logger = logging.getLogger(__name__)
 
-# Logs Ingestion API max payload: 1 MB
-MAX_BATCH_SIZE_BYTES = 1_000_000
-
 
 class SchemaValidationError(ValueError):
-    """Wordt opgegooid bij schema-mismatch in strict-mode."""
+    """Raised on schema mismatch in strict mode."""
 
 
 def _validate_records(
@@ -28,12 +27,12 @@ def _validate_records(
     stream_name: str,
     strict: bool,
 ) -> list[dict]:
-    """Valideer records tegen `expected_columns`.
+    """Validate records against ``expected_columns``.
 
-    - Lenient (default): onbekende kolommen worden weggefilterd; loggt waarschuwing per run.
-    - Strict: gooit SchemaValidationError bij eerste mismatch.
+    - Lenient (default): unknown columns are dropped; logs a warning per run.
+    - Strict: raises SchemaValidationError on the first mismatch.
 
-    Geeft de (eventueel gefilterde) records terug.
+    Returns the (possibly filtered) records.
     """
     if not expected_columns:
         return records
@@ -47,7 +46,7 @@ def _validate_records(
             unexpected.update(extras)
             if strict:
                 raise SchemaValidationError(
-                    f"Onverwachte kolommen in stream {stream_name}: {sorted(extras)}"
+                    f"Unexpected columns in stream {stream_name}: {sorted(extras)}"
                 )
             filtered = {k: v for k, v in record.items() if k in expected}
             if filtered:
@@ -57,7 +56,7 @@ def _validate_records(
 
     if unexpected:
         logger.warning(
-            "Schema-mismatch voor stream %s: %d onverwachte kolommen weggefilterd: %s",
+            "Schema mismatch for stream %s: %d unexpected columns dropped: %s",
             stream_name,
             len(unexpected),
             sorted(unexpected),
@@ -66,12 +65,12 @@ def _validate_records(
 
 
 class IngestionClient:
-    """Wrapper rond azure-monitor-ingestion SDK."""
+    """Wrapper around the azure-monitor-ingestion async SDK."""
 
-    def __init__(self, credential: TokenCredential) -> None:
+    def __init__(self, credential: AsyncTokenCredential) -> None:
         dce_endpoint = os.environ.get("DCE_ENDPOINT", "")
         if not dce_endpoint:
-            raise ValueError("DCE_ENDPOINT environment variable is niet geconfigureerd")
+            raise ValueError("DCE_ENDPOINT environment variable is not configured")
 
         self._client = AzureLogsIngestionClient(
             endpoint=dce_endpoint,
@@ -82,35 +81,35 @@ class IngestionClient:
             os.environ.get("INGESTION_STRICT_SCHEMA", "false").lower() == "true"
         )
 
-    def upload(
+    async def upload(
         self,
         dcr_id: str,
         stream_name: str,
         records: list[dict],
         expected_columns: Iterable[str] | None = None,
     ) -> None:
-        """Upload records naar Log Analytics via de Logs Ingestion API.
+        """Upload records to Log Analytics via the Logs Ingestion API.
 
-        Voert optioneel schema-validatie uit voor upload (lenient/strict).
+        Optionally performs schema validation before upload (lenient/strict).
 
         Args:
-            dcr_id: Immutable ID van de Data Collection Rule.
-            stream_name: Naam van de stream (bijv. 'Custom-DefenderExposureScore_CL').
-            records: Lijst van records om te uploaden.
-            expected_columns: Optionele whitelist van toegestane kolommen.
+            dcr_id: Immutable ID of the Data Collection Rule.
+            stream_name: Stream name (e.g. 'Custom-DefenderExposureScore_CL').
+            records: List of records to upload.
+            expected_columns: Optional whitelist of allowed columns.
 
         Raises:
-            SchemaValidationError: Bij schema-mismatch in strict-mode.
-            Exception: Bij onherstelbare upload-fouten.
+            SchemaValidationError: On schema mismatch in strict mode.
+            Exception: On unrecoverable upload errors.
         """
         if not records:
-            logger.debug("Geen records om te uploaden voor stream %s", stream_name)
+            logger.debug("No records to upload for stream %s", stream_name)
             return
 
         if not dcr_id:
-            # Engine valideert dit al; hier is het een echte programmeerfout.
+            # Engine already validates this; here it would be a real programming error.
             raise ValueError(
-                f"Lege DCR-ID doorgegeven aan upload() voor stream {stream_name}"
+                f"Empty DCR-ID passed to upload() for stream {stream_name}"
             )
 
         records = _validate_records(
@@ -119,32 +118,32 @@ class IngestionClient:
 
         if not records:
             logger.warning(
-                "Geen records over na schema-validatie voor stream %s", stream_name
+                "No records left after schema validation for stream %s", stream_name
             )
             return
 
         logger.info(
-            "Upload %d records naar stream %s (DCR: %s)",
+            "Uploading %d records to stream %s (DCR: %s)",
             len(records),
             stream_name,
             dcr_id[:20] + "...",
         )
 
         try:
-            self._client.upload(
+            await self._client.upload(
                 rule_id=dcr_id,
                 stream_name=stream_name,
                 logs=list(records),
             )
             logger.info(
-                "Upload succesvol: %d records naar %s", len(records), stream_name
+                "Upload successful: %d records to %s", len(records), stream_name
             )
         except Exception:
             logger.error(
-                "Upload mislukt voor stream %s (%d records)", stream_name, len(records)
+                "Upload failed for stream %s (%d records)", stream_name, len(records)
             )
             raise
 
-    def close(self) -> None:
-        """Sluit de underlying client."""
-        self._client.close()
+    async def aclose(self) -> None:
+        """Close the underlying async client."""
+        await self._client.close()

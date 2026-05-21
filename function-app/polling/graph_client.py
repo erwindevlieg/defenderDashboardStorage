@@ -1,6 +1,6 @@
 """Microsoft Graph API client.
 
-Gebruikt voor Secure Score, Intune en Alert data via
+Used for Secure Score, Intune and Alert data via
 https://graph.microsoft.com.
 """
 
@@ -18,7 +18,7 @@ GRAPH_SCOPE = "https://graph.microsoft.com/.default"
 
 
 class GraphClient(BaseHttpClient):
-    """Client voor Microsoft Graph REST API."""
+    """Client for the Microsoft Graph REST API."""
 
     api_label = "Graph"
 
@@ -26,5 +26,5 @@ class GraphClient(BaseHttpClient):
         super().__init__(credential, GRAPH_SCOPE)
 
     def _extra_headers(self) -> dict[str, str]:
-        # Graph vereist ConsistencyLevel voor sommige advanced queries.
+        # Graph requires ConsistencyLevel for some advanced queries.
         return {"ConsistencyLevel": "eventual"}

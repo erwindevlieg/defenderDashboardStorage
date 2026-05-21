@@ -1,7 +1,8 @@
-"""Gedeelde HTTP-clientlaag voor Defender + Graph.
+"""Shared HTTP client layer for Defender + Graph.
 
-Bevat retry/backoff, pagineringslogica en Retry-After parsing zodat
-`DefenderClient` en `GraphClient` alleen API-specifieke details overhouden.
+Provides retry/backoff, pagination and Retry-After parsing so that
+``DefenderClient`` and ``GraphClient`` only have to deal with API-specific
+details.
 """
 
 from __future__ import annotations
@@ -21,31 +22,31 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 3
 RETRY_BACKOFF_BASE = 2  # seconds
-# PII-bescherming: alleen kort fragment van error body loggen.
+# PII protection: only log a short fragment of the error body.
 ERROR_BODY_LOG_LIMIT = 200
 
 
 def _backoff_with_jitter(attempt: int) -> float:
-    """Exponential backoff met full-jitter (AWS-style)."""
+    """Exponential backoff with full-jitter (AWS-style)."""
     cap = RETRY_BACKOFF_BASE ** (attempt + 1)
     return random.uniform(0, cap)
 
 
 def _parse_retry_after(header_value: str | None, attempt: int) -> float:
-    """Parse Retry-After header (seconds OR HTTP-date per RFC 7231).
+    """Parse a Retry-After header (seconds OR HTTP-date per RFC 7231).
 
-    Faalt nooit: bij ontbrekende/onparseerbare waarde valt terug op backoff+jitter.
+    Never raises: on missing/unparseable value falls back to backoff+jitter.
     """
     if not header_value:
         return _backoff_with_jitter(attempt)
-    # Seconds-formaat
+    # Seconds format
     try:
         seconds = float(header_value)
-        # Clamp tegen negatieve/extreme waardes.
+        # Clamp against negative/extreme values.
         return max(0.0, min(seconds, 300.0))
     except (TypeError, ValueError):
         pass
-    # HTTP-date-formaat
+    # HTTP-date format
     try:
         dt = parsedate_to_datetime(header_value)
         import datetime as _dt
@@ -54,21 +55,22 @@ def _parse_retry_after(header_value: str | None, attempt: int) -> float:
         delta = (dt - now).total_seconds()
         return max(0.0, min(delta, 300.0))
     except (TypeError, ValueError):
-        logger.debug("Onparseerbare Retry-After header: %r", header_value)
+        logger.debug("Unparseable Retry-After header: %r", header_value)
         return _backoff_with_jitter(attempt)
 
 
 class BaseHttpClient:
-    """Basisclient met token-cache, retry/backoff en JSON-paginering.
+    """Base client with token cache, retry/backoff and JSON pagination.
 
-    Subklassen overschrijven `_extra_headers()` voor API-specifieke headers en
-    `_timeout()` voor afwijkende timeouts.
+    Subclasses override ``_extra_headers()`` for API-specific headers and
+    ``_timeout()`` for non-default timeouts.
     """
 
     api_label: ClassVar[str] = "HTTP"
 
     def __init__(self, credential: TokenCredential, scope: str) -> None:
         self._token_cache = TokenCache(credential, scope)
+        self._session: aiohttp.ClientSession | None = None
 
     def _get_token(self) -> str:
         return self._token_cache.get()
@@ -79,30 +81,49 @@ class BaseHttpClient:
     def _timeout(self) -> aiohttp.ClientTimeout:
         return aiohttp.ClientTimeout(total=30, connect=5, sock_read=15)
 
+    async def _session_for(
+        self, timeout: aiohttp.ClientTimeout | None = None
+    ) -> aiohttp.ClientSession:
+        """Return a lazily-created shared session for this client.
+
+        The session is kept alive for the lifetime of the engine run and closed
+        via :meth:`aclose`. Reusing the connection pool avoids TLS handshakes
+        per request.
+        """
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(timeout=timeout or self._timeout())
+        return self._session
+
+    async def aclose(self) -> None:
+        """Close the shared session if one was opened."""
+        if self._session is not None and not self._session.closed:
+            await self._session.close()
+        self._session = None
+
     async def fetch(self, url: str) -> dict | list | None:
-        """Haal data op met automatische paginering via `@odata.nextLink`."""
+        """Fetch data with automatic pagination via ``@odata.nextLink``."""
         all_values: list[dict] = []
         current_url: str | None = url
+        session = await self._session_for()
 
-        async with aiohttp.ClientSession(timeout=self._timeout()) as session:
-            while current_url:
-                data = await self._request_with_retry(session, current_url)
-                if data is None:
-                    return None
+        while current_url:
+            data = await self._request_with_retry(session, current_url)
+            if data is None:
+                return None
 
-                if not all_values and "value" not in data:
-                    return data
+            if not all_values and "value" not in data:
+                return data
 
-                values = data.get("value", [])
-                all_values.extend(values)
+            values = data.get("value", [])
+            all_values.extend(values)
 
-                current_url = data.get("@odata.nextLink")
-                if current_url:
-                    logger.debug(
-                        "%s paginering: %d records tot nu toe",
-                        self.api_label,
-                        len(all_values),
-                    )
+            current_url = data.get("@odata.nextLink")
+            if current_url:
+                logger.debug(
+                    "%s pagination: %d records so far",
+                    self.api_label,
+                    len(all_values),
+                )
 
         if all_values:
             return {"value": all_values}
@@ -115,7 +136,7 @@ class BaseHttpClient:
         method: str = "GET",
         json_body: dict | None = None,
     ) -> dict | None:
-        """Voer een HTTP-request uit met retry, backoff+jitter en Retry-After."""
+        """Execute an HTTP request with retry, backoff+jitter and Retry-After."""
         for attempt in range(MAX_RETRIES):
             headers = {
                 "Authorization": f"Bearer {self._get_token()}",
@@ -138,7 +159,7 @@ class BaseHttpClient:
                             response.headers.get("Retry-After"), attempt
                         )
                         logger.warning(
-                            "%s API %d voor %s, retry %d/%d na %.1fs",
+                            "%s API %d for %s, retry %d/%d after %.1fs",
                             self.api_label,
                             response.status,
                             url,
@@ -149,10 +170,10 @@ class BaseHttpClient:
                         await asyncio.sleep(retry_after)
                         continue
 
-                    # 4xx anders dan 429 → niet retryen, beperkt body loggen.
+                    # 4xx other than 429 → do not retry, log body truncated.
                     body = await response.text()
                     logger.error(
-                        "%s API fout %d voor %s",
+                        "%s API error %d for %s",
                         self.api_label,
                         response.status,
                         url,
@@ -168,7 +189,7 @@ class BaseHttpClient:
                 if attempt < MAX_RETRIES - 1:
                     wait = _backoff_with_jitter(attempt)
                     logger.warning(
-                        "%s API netwerk fout voor %s: %s, retry %d/%d na %.1fs",
+                        "%s API network error for %s: %s, retry %d/%d after %.1fs",
                         self.api_label,
                         url,
                         e,
@@ -179,7 +200,7 @@ class BaseHttpClient:
                     await asyncio.sleep(wait)
                 else:
                     logger.error(
-                        "%s API definitief mislukt voor %s: %s",
+                        "%s API permanently failed for %s: %s",
                         self.api_label,
                         url,
                         e,
@@ -187,7 +208,7 @@ class BaseHttpClient:
                     return None
 
         logger.error(
-            "%s API max retries bereikt voor %s na %d pogingen",
+            "%s API max retries reached for %s after %d attempts",
             self.api_label,
             url,
             MAX_RETRIES,

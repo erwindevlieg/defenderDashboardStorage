@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "9356904662610500911"
+      "templateHash": "14605593862921856996"
     }
   },
   "parameters": {
@@ -2581,7 +2581,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "411104879492220423"
+              "templateHash": "6740019454146196361"
             }
           },
           "parameters": {
@@ -2723,6 +2723,80 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "[format('alert-defender-high-failure-rate-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "Defender Dashboard — High polling failure rate",
+                "description": "More than 25% of endpoints failed in the last polling summary (1h window).",
+                "severity": 1,
+                "enabled": true,
+                "evaluationFrequency": "PT15M",
+                "windowSize": "PT1H",
+                "scopes": [
+                  "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "traces\r\n| where message startswith \"Polling summary\"\r\n| extend total = toint(customDimensions.total), failed = toint(customDimensions.failed)\r\n| where total > 0\r\n| extend rate = todouble(failed) / todouble(total)\r\n| where rate > 0.25\r\n| summarize Count = count() by bin(timestamp, 15m)",
+                      "timeAggregation": "Count",
+                      "operator": "GreaterThan",
+                      "threshold": 0,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": "[if(not(empty(parameters('alertEmail'))), createObject('actionGroups', createArray(resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken'))))), createObject())]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "[format('alert-defender-long-run-duration-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "Defender Dashboard — Polling run duration > 10 min",
+                "description": "A polling run took longer than 600 seconds (possible API degradation or upstream slowdown).",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT30M",
+                "windowSize": "PT1H",
+                "scopes": [
+                  "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "traces\r\n| where message startswith \"Polling summary\"\r\n| extend duration_seconds = todouble(customDimensions.duration_seconds)\r\n| where duration_seconds > 600\r\n| summarize Count = count() by bin(timestamp, 30m)",
+                      "timeAggregation": "Count",
+                      "operator": "GreaterThan",
+                      "threshold": 0,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": "[if(not(empty(parameters('alertEmail'))), createObject('actionGroups', createArray(resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken'))))), createObject())]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
               ]
             }
           ],

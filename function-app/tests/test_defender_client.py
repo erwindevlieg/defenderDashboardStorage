@@ -36,13 +36,7 @@ class TestDefenderClient:
             )
         )
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
-            ),
-        ):
+        with patch("aiohttp.ClientSession", return_value=mock_session):
             result = await client.fetch(
                 "https://api.securitycenter.microsoft.com/api/exposureScore"
             )
@@ -67,13 +61,7 @@ class TestDefenderClient:
             )
         )
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
-            ),
-        ):
+        with patch("aiohttp.ClientSession", return_value=mock_session):
             result = await client.fetch(
                 "https://api.securitycenter.microsoft.com/api/machines"
             )
@@ -109,13 +97,7 @@ class TestDefenderClientAdvancedHunting:
             )
         )
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
-            ),
-        ):
+        with patch("aiohttp.ClientSession", return_value=mock_session):
             result = await client.run_advanced_query("DeviceEvents | take 1")
 
         assert result is not None
@@ -141,13 +123,7 @@ class TestDefenderClientAdvancedHunting:
             )
         )
 
-        with patch(
-            "aiohttp.ClientSession",
-            return_value=AsyncMock(
-                __aenter__=AsyncMock(return_value=mock_session),
-                __aexit__=AsyncMock(return_value=False),
-            ),
-        ):
+        with patch("aiohttp.ClientSession", return_value=mock_session):
             result = await client.run_advanced_query("invalid query")
 
         assert result is None
@@ -194,13 +170,7 @@ class TestDefenderClientAdvancedHunting:
         mock_session = self._session_with_responses(responses)
 
         with (
-            patch(
-                "aiohttp.ClientSession",
-                return_value=AsyncMock(
-                    __aenter__=AsyncMock(return_value=mock_session),
-                    __aexit__=AsyncMock(return_value=False),
-                ),
-            ),
+            patch("aiohttp.ClientSession", return_value=mock_session),
             patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
         ):
             result = await client.fetch(
@@ -226,13 +196,7 @@ class TestDefenderClientAdvancedHunting:
         mock_session = self._session_with_responses(responses)
 
         with (
-            patch(
-                "aiohttp.ClientSession",
-                return_value=AsyncMock(
-                    __aenter__=AsyncMock(return_value=mock_session),
-                    __aexit__=AsyncMock(return_value=False),
-                ),
-            ),
+            patch("aiohttp.ClientSession", return_value=mock_session),
             patch("asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await client.fetch(
@@ -255,13 +219,7 @@ class TestDefenderClientAdvancedHunting:
         mock_session = self._session_with_responses(responses)
 
         with (
-            patch(
-                "aiohttp.ClientSession",
-                return_value=AsyncMock(
-                    __aenter__=AsyncMock(return_value=mock_session),
-                    __aexit__=AsyncMock(return_value=False),
-                ),
-            ),
+            patch("aiohttp.ClientSession", return_value=mock_session),
             patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
         ):
             await client.fetch(
@@ -283,13 +241,7 @@ class TestDefenderClientAdvancedHunting:
         mock_session = self._session_with_responses(responses)
 
         with (
-            patch(
-                "aiohttp.ClientSession",
-                return_value=AsyncMock(
-                    __aenter__=AsyncMock(return_value=mock_session),
-                    __aexit__=AsyncMock(return_value=False),
-                ),
-            ),
+            patch("aiohttp.ClientSession", return_value=mock_session),
             patch("asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await client.fetch(
@@ -308,13 +260,7 @@ class TestDefenderClientAdvancedHunting:
         mock_session = self._session_with_responses(responses)
 
         with (
-            patch(
-                "aiohttp.ClientSession",
-                return_value=AsyncMock(
-                    __aenter__=AsyncMock(return_value=mock_session),
-                    __aexit__=AsyncMock(return_value=False),
-                ),
-            ),
+            patch("aiohttp.ClientSession", return_value=mock_session),
             patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
         ):
             result = await client.fetch(
@@ -348,13 +294,7 @@ class TestDefenderClientAdvancedHunting:
         mock_session.get = MagicMock(side_effect=side_effect)
 
         with (
-            patch(
-                "aiohttp.ClientSession",
-                return_value=AsyncMock(
-                    __aenter__=AsyncMock(return_value=mock_session),
-                    __aexit__=AsyncMock(return_value=False),
-                ),
-            ),
+            patch("aiohttp.ClientSession", return_value=mock_session),
             patch("asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await client.fetch(
