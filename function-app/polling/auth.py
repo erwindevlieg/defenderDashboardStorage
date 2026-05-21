@@ -1,7 +1,7 @@
 """Token cache utilities.
 
-Voorkomt dat per HTTP-request opnieuw een token wordt opgevraagd bij MSAL/IMDS.
-Houdt tokens vast tot vlak voor expiratie (configureerbare marge).
+Avoids requesting a new token from MSAL/IMDS on every HTTP request.
+Holds tokens until just before expiry (configurable margin).
 """
 
 from __future__ import annotations
@@ -14,9 +14,9 @@ from typing import Protocol
 
 logger = logging.getLogger(__name__)
 
-# Marge in seconden vóór `expires_on` waarop we proactief verversen.
-# Overschrijfbaar via env-var TOKEN_REFRESH_MARGIN_SECONDS.
-DEFAULT_REFRESH_MARGIN_SECONDS = 300  # 5 minuten
+# Margin in seconds before ``expires_on`` at which we refresh proactively.
+# Overridable via env-var TOKEN_REFRESH_MARGIN_SECONDS.
+DEFAULT_REFRESH_MARGIN_SECONDS = 300  # 5 minutes
 
 
 def _default_margin() -> int:
@@ -27,17 +27,17 @@ def _default_margin() -> int:
 
 
 class _TokenCredential(Protocol):
-    """Subset van azure.core.credentials.TokenCredential die we hier gebruiken."""
+    """Subset of azure.core.credentials.TokenCredential that we use here."""
 
     def get_token(self, *scopes: str) -> object:  # pragma: no cover - structural
         ...
 
 
 class TokenCache:
-    """Thread-safe cache voor één scope.
+    """Thread-safe cache for a single scope.
 
-    Houdt het token + expiratie bij en haalt alleen een nieuw token op als
-    het huidige token verlopen is (of bijna verloopt).
+    Tracks token + expiry and only fetches a new token when the current one is
+    expired (or about to expire).
     """
 
     def __init__(
@@ -58,20 +58,21 @@ class TokenCache:
         self._lock = Lock()
 
     def get(self) -> str:
-        """Geef een geldig token terug, ververs indien nodig."""
+        """Return a valid token, refresh if needed."""
         now = time.time()
         with self._lock:
             if self._token and now < (self._expires_on - self._margin):
                 return self._token
 
-            logger.debug("Token cache miss/refresh voor scope %s", self._scope)
+            logger.debug("Token cache miss/refresh for scope %s", self._scope)
             access_token = self._credential.get_token(self._scope)
-            self._token = access_token.token  # type: ignore[attr-defined]
+            token: str = access_token.token  # type: ignore[attr-defined]
+            self._token = token
             self._expires_on = float(access_token.expires_on)  # type: ignore[attr-defined]
-            return self._token
+            return token
 
     def invalidate(self) -> None:
-        """Forceer een refresh bij de volgende `get()`."""
+        """Force a refresh on the next ``get()``."""
         with self._lock:
             self._token = None
             self._expires_on = 0.0

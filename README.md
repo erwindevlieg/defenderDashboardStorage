@@ -13,7 +13,7 @@ Maak eerst een resource group aan (bijv. `rg-defender-dashboard` in `West Europe
 ### Stap 2 — Wat moet ik invullen?
 
 | Parameter | Wat invullen | Verplicht |
-|---|---|---|
+| --- | --- | --- |
 | `resourceToken` | Kort uniek token voor resource namen, bijv. `prod01` (3-10 tekens) | ✅ |
 | `location` | Azure regio — standaard de locatie van je resource group | |
 | `repoUrl` | URL van je fork/clone, bijv. `https://github.com/jouw-user/defenderDashboardStorage` — dan wordt de Python code automatisch gedeployed | |
@@ -27,7 +27,7 @@ Maak eerst een resource group aan (bijv. `rg-defender-dashboard` in `West Europe
 De knop deployt de **volledige infrastructuur** in één keer:
 
 | Wat | Resource | Automatisch? |
-|---|---|---|
+| --- | --- | --- |
 | Managed Identity | `uai-defender-dashboard-<token>` | ✅ Altijd |
 | Log Analytics Workspace | `law-defender-dashboard-<token>` met 14 custom tabellen | ✅ Altijd |
 | Data Collection Endpoint + 3 DCRs | Data-ingestie pipeline | ✅ Altijd |
@@ -87,7 +87,7 @@ $uamiPrincipalId = (az identity show `
 Het script wijst deze permissies toe:
 
 | API | Permissies |
-|---|---|
+| --- | --- |
 | **Defender XDR** | Score.Read.All, Machine.Read.All, Vulnerability.Read.All, Alert.Read.All, SecurityRecommendation.Read.All, Software.Read.All, AdvancedQuery.Read.All |
 | **Microsoft Graph** | SecurityEvents.Read.All, DeviceManagementManagedDevices.Read.All, DeviceManagementConfiguration.Read.All, DeviceManagementApps.Read.All |
 
@@ -108,7 +108,7 @@ Na alle stappen:
 ## Troubleshooting
 
 | Symptoom | Oorzaak | Oplossing |
-|---|---|---|
+| --- | --- | --- |
 | `403 Forbidden` op Defender of Graph endpoints | App roles nog niet actief of niet toegewezen | Wacht tot 1 uur na toewijzing; verifieer via `Get-MgServicePrincipalAppRoleAssignment` |
 | `429 Too Many Requests` herhaaldelijk in logs | Tenant-wide throttling | Engine retried automatisch met jitter; bij aanhoudend throttlen: verlaag run-frequentie of verminder endpoints per run |
 | Records ontbreken stilzwijgend in Log Analytics-tabel | Stream-schema in DCR ≠ tabel-schema | Voeg `expected_columns` toe aan endpoint en check Application Insights op `Schema-mismatch` warnings |
@@ -119,26 +119,32 @@ Na alle stappen:
 
 ### Logging samenvatting
 
-Elke run schrijft één samenvattingsregel met `custom_dimensions` voor App Insights. Voorbeeld-KQL:
+Elke run schrijft één samenvattingsregel met `custom_dimensions` voor App Insights. Elke run heeft een unieke `run_id` (uuid4) die in alle logs van die run terugkomt — handig om endpoint-niveau logs te correleren aan de samenvatting. Voorbeeld-KQL:
 
 ```kql
 traces
-| where message startswith "Polling samenvatting"
+| where message startswith "Polling summary"
 | extend
-    schedule = tostring(customDimensions.schedule),
-    succeeded = toint(customDimensions.succeeded),
-    failed = toint(customDimensions.failed),
-    records = toint(customDimensions.records_total),
-    duration_s = todouble(customDimensions.duration_seconds)
-| project timestamp, schedule, succeeded, failed, records, duration_s
+    schedule    = tostring(customDimensions.schedule),
+    run_id      = tostring(customDimensions.run_id),
+    succeeded   = toint(customDimensions.succeeded),
+    failed      = toint(customDimensions.failed),
+    records     = toint(customDimensions.records_total),
+    duration_s  = todouble(customDimensions.duration_seconds),
+    concurrency = toint(customDimensions.concurrency)
+| project timestamp, schedule, run_id, succeeded, failed, records, duration_s, concurrency
 | order by timestamp desc
 ```
+
+### Performance tuning
+
+Endpoints worden parallel opgehaald binnen één run. Het maximum aantal gelijktijdige requests is configureerbaar via de App Setting `POLL_CONCURRENCY` (default `5`). Verhoog voorzichtig — te hoog risico op tenant-wide throttling (429).
 
 ---
 
 ## Architectuur
 
-```
+```text
 ┌─────────────────┐     ┌───────────────────┐     ┌────────────────────┐
 │  Defender XDR    │────▶│   Function App    │────▶│  Log Analytics     │
 │  Graph API       │     │   (Python 3.11)   │     │  Workspace         │
@@ -170,28 +176,38 @@ Daarna `azuredeploy.json` hercompileren en opnieuw deployen. Zie [docs/adding-co
 ```bash
 cd function-app
 
-# Dependencies installeren
-pip install -r requirements.txt
+# Dev dependencies installeren (lint, test, doc coverage)
+pip install -r requirements-dev.txt
+
+# Pre-commit hooks activeren (ruff, markdownlint, interrogate, ...)
+# Vanuit repo-root:
+cd ..
+pre-commit install
 
 # Tests draaien
-pip install pytest pytest-asyncio
+cd function-app
 pytest tests/ -v
 
-# Linting
-pip install ruff
+# Handmatig lint
 ruff check .
 ruff format --check .
+mypy polling
+interrogate -v polling
+
+# Alle hooks ineens (markdown, yaml, python) over de hele repo:
+cd ..
+pre-commit run --all-files
 ```
 
 ## Projectstructuur
 
-```
+```text
 infra/                — Bicep modules (infrastructuur)
   modules/            — Kern-modules (workspace, dcr, function-app, etc.)
   scripts/            — Bootstrap scripts (app role assignments)
 function-app/         — Azure Function App (Python)
-  engine/             — Polling engine
-  config/             — Endpoint configuratie
+  polling/            — Polling engine (engine, clients, ingestion, state)
+  config/             — Endpoint configuratie (fallback)
   tests/              — Pytest tests
 workbooks/            — Azure Monitor Workbook templates
 docs/                 — Documentatie

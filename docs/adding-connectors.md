@@ -44,7 +44,7 @@ resource tableEntraRiskyUsers 'Microsoft.OperationalInsights/workspaces/tables@2
 ### Keuze: Analytics vs Basic
 
 | Plan | Kosten | Query snelheid | Gebruik voor |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Analytics** | Hoger | Snel (volledige KQL) | Dashboard data die vaak bevraagd wordt |
 | **Basic** | Lager | Trager (30 dagen interactief) | Snapshots, archief-data |
 
@@ -53,7 +53,7 @@ resource tableEntraRiskyUsers 'Microsoft.OperationalInsights/workspaces/tables@2
 ### Kolom types
 
 | Type | Voorbeeld |
-|---|---|
+| --- | --- |
 | `string` | IDs, namen, categorieën |
 | `int` | Aantallen |
 | `real` | Scores, percentages |
@@ -102,7 +102,7 @@ Binnen `dataFlows` van dezelfde DCR:
 ### Welke DCR?
 
 | DCR | Schedule | Gebruik voor |
-|---|---|---|
+| --- | --- | --- |
 | `dcrDailyScores` | Dagelijks 06:00 UTC | Scores, alerts, recommendations |
 | `dcrWeeklySnapshots` | Wekelijks maandag 08:00 UTC | Device/software inventarisaties |
 | `dcrIntune` | Wekelijks maandag 08:00 UTC | Intune-specifieke data |
@@ -156,7 +156,7 @@ resource kvEntraRiskyUsers 'Microsoft.AppConfiguration/configurationStores/keyVa
 
 Gebruik altijd het prefix `Custom-` gevolgd door de tabelnaam (incl. `_CL`):
 
-```
+```text
 Custom-<TableName>_CL
 ```
 
@@ -165,7 +165,7 @@ Custom-<TableName>_CL
 De engine ondersteunt vijf transformaties op de API-response voordat records naar de DCR gaan:
 
 | Transform | API response formaat | Output | Gebruik voor |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `single` | `{ "score": 42 }` | `[{ "score": 42 }]` | Eén object (Exposure Score, Configuration Score) |
 | `list` | `{ "value": [...] }` | `[...]` | Defender REST APIs met value-array |
 | `graphList` | `{ "value": [...] }` | `[...]` | Microsoft Graph collecties (functioneel gelijk aan `list`; behouden voor leesbaarheid) |
@@ -177,7 +177,7 @@ Voor `advancedHunting` is een extra veld `query` verplicht met de KQL-string. Zi
 ### Scope waarden
 
 | API | Scope |
-|---|---|
+| --- | --- |
 | Defender for Endpoint | `https://api.securitycenter.microsoft.com/.default` |
 | Microsoft Graph | `https://graph.microsoft.com/.default` |
 
@@ -227,7 +227,7 @@ Daarna opnieuw deployen:
 Gebruik deze kolommen om tabellen aan elkaar te linken:
 
 | Kolom | Doel |
-|---|---|
+| --- | --- |
 | `DeviceId` | MDE device ID — koppelt alle Defender device-tabellen |
 | `AadDeviceId` | Entra device ID — brug tussen Defender en Intune |
 | `SoftwareId` | Koppelt SoftwareInventory ↔ VulnDelta ↔ DeviceSoftware |

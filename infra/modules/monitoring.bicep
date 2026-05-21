@@ -123,6 +123,88 @@ resource alertMissingDailyData 'Microsoft.Insights/scheduledQueryRules@2023-03-1
 }
 
 // ============================================================
+// Alert: Polling run failure rate > 25%
+// ============================================================
+// Uses the structured "Polling summary" log emitted by PollingEngine._process_endpoints.
+// customDimensions.failed and .total drive the ratio.
+resource alertHighFailureRate 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
+  name: 'alert-defender-high-failure-rate-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'Defender Dashboard — High polling failure rate'
+    description: 'More than 25% of endpoints failed in the last polling summary (1h window).'
+    severity: 1 // Error
+    enabled: true
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    scopes: [ appInsights.id ]
+    criteria: {
+      allOf: [
+        {
+          query: '''traces
+| where message startswith "Polling summary"
+| extend total = toint(customDimensions.total), failed = toint(customDimensions.failed)
+| where total > 0
+| extend rate = todouble(failed) / todouble(total)
+| where rate > 0.25
+| summarize Count = count() by bin(timestamp, 15m)'''
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: !empty(alertEmail) ? {
+      actionGroups: [ actionGroup.id ]
+    } : {}
+  }
+}
+
+// ============================================================
+// Alert: Polling run duration > 10 minutes
+// ============================================================
+resource alertLongRunDuration 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
+  name: 'alert-defender-long-run-duration-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'Defender Dashboard — Polling run duration > 10 min'
+    description: 'A polling run took longer than 600 seconds (possible API degradation or upstream slowdown).'
+    severity: 2 // Warning
+    enabled: true
+    evaluationFrequency: 'PT30M'
+    windowSize: 'PT1H'
+    scopes: [ appInsights.id ]
+    criteria: {
+      allOf: [
+        {
+          query: '''traces
+| where message startswith "Polling summary"
+| extend duration_seconds = todouble(customDimensions.duration_seconds)
+| where duration_seconds > 600
+| summarize Count = count() by bin(timestamp, 30m)'''
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: !empty(alertEmail) ? {
+      actionGroups: [ actionGroup.id ]
+    } : {}
+  }
+}
+
+// ============================================================
 // Outputs
 // ============================================================
 @description('Application Insights Connection String')

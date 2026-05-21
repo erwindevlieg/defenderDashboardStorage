@@ -1,0 +1,9 @@
+{
+  // Shared markdownlint rules for VS Code extension + CI (markdownlint-cli2).
+  // Docs: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+  "default": true,
+  "MD013": false,                  // Line length — prose wrapping not enforced
+  "MD041": false,                  // First line top-level heading — subdocs may start otherwise
+  "MD024": { "siblings_only": true }, // Allow duplicate headings under different parents
+  "MD033": false                   // Allow inline HTML (used for badges/details)
+}

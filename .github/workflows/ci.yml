@@ -57,12 +57,15 @@ jobs:
   # Python lint + format — ruff catches bugs, style issues,
   # and import problems that may not surface locally
   # ============================================================
-  python-lint:
-    name: Python Lint & Format
+  # ============================================================
+  # Lint suite — pre-commit is the single source of truth.
+  # Runs ruff, ruff-format, mypy, yamllint, markdownlint, interrogate,
+  # and the basic pre-commit-hooks suite over every file in the repo.
+  # Local devs run the exact same hooks via `pre-commit run --all-files`.
+  # ============================================================
+  pre-commit:
+    name: Pre-commit (lint + format + types + docs)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: function-app
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -70,22 +73,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install ruff mypy
-
-      - name: Ruff check
-        run: ruff check .
-
-      - name: Ruff format check
-        run: ruff format --check .
-
-      - name: Mypy type check
-        run: mypy polling
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
 
   # ============================================================
-  # Python tests — run full test suite
+  # Python tests — run full test suite (no pre-commit equivalent).
   # ============================================================
   python-test:
     name: Python Tests
@@ -101,9 +92,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install pytest pytest-asyncio
+        run: pip install -r requirements-dev.txt
 
       - name: Run tests
         run: pytest tests/ -v

@@ -1,0 +1,19 @@
+# Files excluded from the Azure Functions deployment package (Oryx/zip deploy).
+# Keeps the deployed bundle small and free of dev/test/build artefacts.
+.git*
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Development tooling — runtime install only uses requirements.txt
+requirements-dev.txt
+pyproject.toml
+
+# Tests
+tests/
+
+# Editor
+.vscode/

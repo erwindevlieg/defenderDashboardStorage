@@ -36,6 +36,7 @@ union withsource=TableName
 ### Geen data binnenkomt
 
 1. **Controleer Function App logs:**
+
    ```bash
    az functionapp log tail --name func-defender-dashboard-<token> --resource-group rg-defender-dashboard
    ```
@@ -49,6 +50,7 @@ union withsource=TableName
    - Controleer dat streams en destinations correct zijn
 
 4. **Test API handmatig:**
+
    ```bash
    TOKEN=$(az account get-access-token --resource https://api.securitycenter.microsoft.com --query accessToken -o tsv)
    curl -H "Authorization: Bearer $TOKEN" https://api.securitycenter.microsoft.com/api/exposureScore
@@ -108,7 +110,8 @@ traces
 ### Via App Configuration (geen code wijziging)
 
 1. Voeg een nieuw key-value pair toe aan App Configuration:
-   ```
+
+   ```text
    Key: endpoints:daily:newEndpoint
    Value: {"url": "...", "method": "GET", "scope": "...", "stream": "Custom-NewTable_CL", "dcr": "daily", "transform": "list"}
    ```
@@ -118,6 +121,7 @@ traces
 3. Voeg de stream toe aan de juiste DCR in `dcr.bicep`
 
 4. Recompile en deploy:
+
    ```bash
    az bicep build --file infra/main.bicep --outfile azuredeploy.json
    ```
@@ -190,6 +194,7 @@ Usage
 ```
 
 Monitor ook via Azure Cost Management:
-```
+
+```text
 Resource Group: rg-defender-dashboard
 ```

@@ -1,6 +1,6 @@
 """Defender for Endpoint API client.
 
-Gebruikt Managed Identity voor authenticatie tegen
+Uses Managed Identity to authenticate against
 https://api.securitycenter.microsoft.com.
 """
 
@@ -22,7 +22,7 @@ ADVANCED_HUNTING_URL = (
 
 
 class DefenderClient(BaseHttpClient):
-    """Client voor Microsoft Defender for Endpoint REST API."""
+    """Client for the Microsoft Defender for Endpoint REST API."""
 
     api_label = "Defender"
 
@@ -30,19 +30,19 @@ class DefenderClient(BaseHttpClient):
         super().__init__(credential, DEFENDER_SCOPE)
 
     async def run_advanced_query(self, kql: str) -> dict | None:
-        """Voer een Advanced Hunting KQL query uit.
+        """Run an Advanced Hunting KQL query.
 
         Args:
             kql: KQL query string.
 
         Returns:
-            Response dict met 'Results' key, of None bij fouten.
+            Response dict with 'Results' key, or None on error.
         """
         timeout = aiohttp.ClientTimeout(total=120, connect=5, sock_read=90)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            return await self._request_with_retry(
-                session,
-                ADVANCED_HUNTING_URL,
-                method="POST",
-                json_body={"Query": kql},
-            )
+        session = await self._session_for(timeout=timeout)
+        return await self._request_with_retry(
+            session,
+            ADVANCED_HUNTING_URL,
+            method="POST",
+            json_body={"Query": kql},
+        )

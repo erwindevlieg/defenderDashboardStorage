@@ -1,11 +1,11 @@
-"""Persistente opslag van mislukte endpoints (per schedule).
+"""Persistent storage for failed endpoints (per schedule).
 
-Flex Consumption is stateless; zonder persistente opslag verliezen we de
-retry-lijst bij elke cold start. Deze module schrijft mislukte endpoints
-naar een Azure Storage Table en leest ze terug bij start van een run.
+Flex Consumption is stateless; without persistent storage we would lose the
+retry list on every cold start. This module writes failed endpoints to an
+Azure Storage Table and reads them back at the beginning of a run.
 
-Best-effort: bij elke tabel-fout valt de engine terug op in-memory state,
-zodat de polling-functie blijft draaien.
+Best-effort: on any table error the engine falls back to in-memory state so
+the polling function keeps running.
 """
 
 from __future__ import annotations
@@ -21,15 +21,15 @@ from azure.core.credentials import TokenCredential
 
 logger = logging.getLogger(__name__)
 
-# Eén TableClient per (account, table) wordt gecached om reconnect-kosten te
-# vermijden binnen één Function-host instance.
+# One TableClient per (account, table) is cached to avoid reconnect cost
+# within a single Function-host instance.
 _TABLE_CLIENT_CACHE: dict[tuple[str, str], object] = {}
 
 
 def _build_table_client(
     credential: TokenCredential, account_name: str, table_name: str
 ) -> object | None:
-    """Maak (of haal uit cache) een TableClient. Retourneert None bij fouten."""
+    """Build (or return cached) TableClient. Returns None on error."""
     key = (account_name, table_name)
     if key in _TABLE_CLIENT_CACHE:
         return _TABLE_CLIENT_CACHE[key]
@@ -37,9 +37,7 @@ def _build_table_client(
     try:
         from azure.data.tables import TableClient
     except ImportError:
-        logger.warning(
-            "azure-data-tables niet geïnstalleerd; persistente state uitgeschakeld"
-        )
+        logger.warning("azure-data-tables not installed; persistent state disabled")
         return None
 
     try:
@@ -47,25 +45,25 @@ def _build_table_client(
         client = TableClient(
             endpoint=endpoint, table_name=table_name, credential=credential
         )
-        # Zorg dat de tabel bestaat (idempotent — SDK gooit ResourceExistsError).
+        # Ensure the table exists (idempotent — SDK raises ResourceExistsError).
         with contextlib.suppress(Exception):
             client.create_table()
         _TABLE_CLIENT_CACHE[key] = client
         return client
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Kon TableClient niet maken: %s", exc)
+        logger.warning("Could not build TableClient: %s", exc)
         return None
 
 
 class FailedEndpointStore:
-    """Persisteert mislukte endpoints in Azure Table Storage.
+    """Persists failed endpoints in Azure Table Storage.
 
-    Schema per entity:
+    Entity schema:
       - PartitionKey: schedule ('daily' / 'weekly')
-      - RowKey: unieke ID (uuid4)
-      - Timestamp: door SDK gezet
-      - QueuedAt: epoch seconden waarop endpoint gefaald is (float)
-      - Endpoint: JSON-serialized endpoint-config (string)
+      - RowKey: unique id (uuid4)
+      - Timestamp: set by SDK
+      - QueuedAt: epoch seconds the endpoint failed (float)
+      - Endpoint: JSON-serialized endpoint config (string)
     """
 
     def __init__(
@@ -75,9 +73,11 @@ class FailedEndpointStore:
         table_name: str | None = None,
     ) -> None:
         self._credential = credential
-        self._account = account_name or os.environ.get("STATE_STORAGE_ACCOUNT", "")
-        self._table = table_name or os.environ.get(
-            "STATE_TABLE_NAME", "FailedEndpoints"
+        self._account: str = (
+            account_name or os.environ.get("STATE_STORAGE_ACCOUNT") or ""
+        )
+        self._table: str = (
+            table_name or os.environ.get("STATE_TABLE_NAME") or "FailedEndpoints"
         )
         self._client = (
             _build_table_client(credential, self._account, self._table)
@@ -87,13 +87,13 @@ class FailedEndpointStore:
 
     @property
     def enabled(self) -> bool:
+        """Return whether persistence is active (Table client built successfully)."""
         return self._client is not None
 
     def load(self, schedule: str, ttl_seconds: int) -> list[tuple[float, dict]]:
-        """Laad alle niet-verlopen failed entries voor een schedule.
+        """Load all non-expired failed entries for a schedule.
 
-        Verlopen entries worden direct verwijderd.
-        Bij fouten: log + return [].
+        Expired entries are deleted in-line. On error: log and return [].
         """
         if not self._client:
             return []
@@ -111,7 +111,7 @@ class FailedEndpointStore:
                     endpoint = json.loads(entity.get("Endpoint", "{}"))
                 except (TypeError, ValueError, json.JSONDecodeError):
                     logger.warning(
-                        "Ongeldige failed-entry %s overgeslagen", entity.get("RowKey")
+                        "Skipping invalid failed-entry %s", entity.get("RowKey")
                     )
                     self._safe_delete(schedule, entity.get("RowKey", ""))
                     continue
@@ -122,13 +122,13 @@ class FailedEndpointStore:
 
                 result.append((queued_at, endpoint))
         except Exception as exc:  # noqa: BLE001
-            logger.warning("Kon failed-state niet laden (%s): %s", schedule, exc)
+            logger.warning("Could not load failed-state (%s): %s", schedule, exc)
             return []
 
         return result
 
     def clear(self, schedule: str) -> None:
-        """Verwijder alle entries voor een schedule (na succesvolle reload)."""
+        """Delete all entries for a schedule (after a successful reload)."""
         if not self._client:
             return
         try:
@@ -140,10 +140,10 @@ class FailedEndpointStore:
             for entity in entities:
                 self._safe_delete(schedule, entity.get("RowKey", ""))
         except Exception as exc:  # noqa: BLE001
-            logger.warning("Kon failed-state niet wissen (%s): %s", schedule, exc)
+            logger.warning("Could not clear failed-state (%s): %s", schedule, exc)
 
     def save(self, schedule: str, failed: list[dict]) -> None:
-        """Schrijf de huidige failed-set weg (overschrijft de vorige)."""
+        """Write the current failed-set (overwrites the previous one)."""
         if not self._client:
             return
         self.clear(schedule)
@@ -159,12 +159,12 @@ class FailedEndpointStore:
                     }
                 )
             except Exception as exc:  # noqa: BLE001
-                logger.warning("Kon failed-entry niet opslaan: %s", exc)
+                logger.warning("Could not save failed-entry: %s", exc)
 
     def _safe_delete(self, partition_key: str, row_key: str) -> None:
         if not self._client or not row_key:
             return
-        # Best-effort: verwijdering kan al gebeurd zijn / entry kan verdwenen zijn.
+        # Best-effort: delete may already have happened / entry may be gone.
         with contextlib.suppress(Exception):
             self._client.delete_entity(  # type: ignore[attr-defined]
                 partition_key=partition_key, row_key=row_key
