@@ -192,6 +192,7 @@ module workbooks 'modules/workbooks.bicep' = {
   params: {
     location: location
     workspaceId: workspace.outputs.workspaceId
+    appInsightsId: monitoring.outputs.appInsightsId
     tags: tags
   }
 }
