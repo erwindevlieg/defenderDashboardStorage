@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import aiohttp
 import pytest
 
-from polling.graph_client import GraphClient, GRAPH_SCOPE
+from polling.graph_client import GRAPH_SCOPE, GraphClient
 
 
 class TestGraphClient:

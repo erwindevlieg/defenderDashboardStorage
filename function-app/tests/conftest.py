@@ -1,6 +1,7 @@
 """Shared test fixtures."""
 
 import os
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -16,6 +17,8 @@ def mock_env():
         "DCR_WEEKLY_SNAPSHOTS_ID": "dcr-weekly-test-id",
         "DCR_INTUNE_ID": "dcr-intune-test-id",
         "APP_CONFIG_ENDPOINT": "",
+        # Voorkom dat tests proberen verbinding te maken met Azure Table Storage.
+        "STATE_STORAGE_ACCOUNT": "",
     }
     with patch.dict(os.environ, env_vars):
         yield
@@ -25,7 +28,10 @@ def mock_env():
 def mock_credential():
     """Mock Azure credential."""
     credential = MagicMock()
-    credential.get_token.return_value = MagicMock(token="test-token-123")
+    credential.get_token.return_value = MagicMock(
+        token="test-token-123",
+        expires_on=int(time.time()) + 86400,
+    )
     return credential
 
 

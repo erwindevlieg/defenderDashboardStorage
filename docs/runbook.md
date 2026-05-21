@@ -64,9 +64,42 @@ union withsource=TableName
 
 De polling engine heeft ingebouwde retry- en backfill-logica:
 
-- **Retry:** 3x exponentieel backoff (2, 4, 8 seconden) bij 429/5xx fouten
+- **Retry:** 3x exponentieel backoff (2, 4, 8 seconden basis + jitter) bij 429/5xx fouten
 - **Backfill:** Gefaalde endpoints worden bij de volgende run opnieuw geprobeerd
+- **TTL op backfill:** Mislukte endpoints worden na 24 uur uit de retry-queue verwijderd om eindeloos retryen op permanent kapotte endpoints te voorkomen
 - **Niet-retryable:** 400, 401, 403 worden direct overgeslagen (configuratiefout)
+
+### Polling samenvatting per run
+
+Elke run schrijft één samenvattingsregel met `custom_dimensions` voor App Insights:
+
+```kusto
+traces
+| where message startswith "Polling samenvatting"
+| extend
+    schedule = tostring(customDimensions.schedule),
+    total = toint(customDimensions.total),
+    succeeded = toint(customDimensions.succeeded),
+    failed = toint(customDimensions.failed),
+    empty = toint(customDimensions.empty),
+    records = toint(customDimensions.records_total),
+    duration_s = todouble(customDimensions.duration_seconds),
+    p50 = todouble(customDimensions.duration_p50),
+    p95 = todouble(customDimensions.duration_p95),
+    failed_keys = tostring(customDimensions.failed_keys)
+| project timestamp, schedule, succeeded, failed, empty, records, duration_s, p50, p95, failed_keys
+| order by timestamp desc
+```
+
+### Schema-validatie
+
+Endpoints met `expected_columns` in hun config worden vóór upload gefilterd op onverwachte kolommen. Default is **lenient**: onbekende kolommen worden weggefilterd en gelogd als waarschuwing. Zet App Setting `INGESTION_STRICT_SCHEMA=true` om elke mismatch hard te laten falen.
+
+```kusto
+traces
+| where message has "Schema-mismatch"
+| order by timestamp desc
+```
 
 ---
 

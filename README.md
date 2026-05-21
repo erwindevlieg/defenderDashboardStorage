@@ -105,6 +105,37 @@ Na alle stappen:
 
 ---
 
+## Troubleshooting
+
+| Symptoom | Oorzaak | Oplossing |
+|---|---|---|
+| `403 Forbidden` op Defender of Graph endpoints | App roles nog niet actief of niet toegewezen | Wacht tot 1 uur na toewijzing; verifieer via `Get-MgServicePrincipalAppRoleAssignment` |
+| `429 Too Many Requests` herhaaldelijk in logs | Tenant-wide throttling | Engine retried automatisch met jitter; bij aanhoudend throttlen: verlaag run-frequentie of verminder endpoints per run |
+| Records ontbreken stilzwijgend in Log Analytics-tabel | Stream-schema in DCR ≠ tabel-schema | Voeg `expected_columns` toe aan endpoint en check Application Insights op `Schema-mismatch` warnings |
+| `INGESTION_STRICT_SCHEMA=true` laat upload falen | Strict mode is opt-in | Zet env var op `false` (default) of fix het schema |
+| Function App start niet | DCE_ENDPOINT, DCR_*_ID of APP_CONFIG_ENDPOINT ontbreekt | Controleer App Settings van de Function App |
+| Geen data na deployment | `repoUrl` niet ingevuld én code niet handmatig gepubliceerd | `func azure functionapp publish <naam> --python` |
+| Polling-summary ontbreekt in App Insights | `custom_dimensions` worden gefilterd | Query: `traces \| where customDimensions has "schedule"` |
+
+### Logging samenvatting
+
+Elke run schrijft één samenvattingsregel met `custom_dimensions` voor App Insights. Voorbeeld-KQL:
+
+```kql
+traces
+| where message startswith "Polling samenvatting"
+| extend
+    schedule = tostring(customDimensions.schedule),
+    succeeded = toint(customDimensions.succeeded),
+    failed = toint(customDimensions.failed),
+    records = toint(customDimensions.records_total),
+    duration_s = todouble(customDimensions.duration_seconds)
+| project timestamp, schedule, succeeded, failed, records, duration_s
+| order by timestamp desc
+```
+
+---
+
 ## Architectuur
 
 ```
@@ -126,9 +157,13 @@ Na alle stappen:
 
 ## Databron toevoegen
 
-Kopieer `infra/custom/_example.bicep`, pas het aan, en activeer het in `infra/custom/custom.bicep`. Voeg een endpoint toe in `endpoints.json` en deploy opnieuw.
+Voeg een nieuwe databron toe door drie bestanden aan te passen:
 
-Zie [docs/adding-connectors.md](docs/adding-connectors.md) voor de volledige stap-voor-stap handleiding.
+1. `infra/modules/workspace.bicep` — nieuwe `_CL` tabel
+2. `infra/modules/dcr.bicep` — stream + data flow in de juiste DCR
+3. `function-app/config/endpoints.json` én `infra/modules/app-config.bicep` — polling configuratie
+
+Daarna `azuredeploy.json` hercompileren en opnieuw deployen. Zie [docs/adding-connectors.md](docs/adding-connectors.md) voor het volledige stappenplan met voorbeeld.
 
 ## Lokaal ontwikkelen
 
@@ -153,7 +188,6 @@ ruff format --check .
 ```
 infra/                — Bicep modules (infrastructuur)
   modules/            — Kern-modules (workspace, dcr, function-app, etc.)
-  custom/             — Eigen connectors toevoegen (zie _example.bicep)
   scripts/            — Bootstrap scripts (app role assignments)
 function-app/         — Azure Function App (Python)
   engine/             — Polling engine

@@ -70,6 +70,7 @@
       "stream": "Custom-DefenderASREvents_CL",
       "dcr": "daily",
       "transform": "advancedHunting",
+      "expected_columns": ["RuleName", "ActionType", "EventCount", "UniqueDevices"],
       "query": "DeviceEvents | where Timestamp > ago(1d) | where ActionType startswith 'Asr' | extend Action = case(ActionType endswith 'Blocked', 'Blocked', ActionType endswith 'Audited', 'Audited', ActionType endswith 'Warned', 'Warned', 'Other') | extend RuleName = replace_regex(ActionType, '(Blocked|Audited|Warned|Bypassed)$', '') | where Action != 'Other' | summarize EventCount=count(), UniqueDevices=dcount(DeviceId) by RuleName, Action | project RuleName, ActionType=Action, EventCount, UniqueDevices"
     },
     {
@@ -79,6 +80,15 @@
       "stream": "Custom-DefenderProtectionState_CL",
       "dcr": "daily",
       "transform": "advancedHunting",
+      "expected_columns": [
+        "ConfigurationId",
+        "ConfigurationName",
+        "ConfigurationCategory",
+        "ConfigurationSubcategory",
+        "CompliantDevices",
+        "NonCompliantDevices",
+        "TotalDevices"
+      ],
       "query": "DeviceTvmSecureConfigurationAssessment | where ConfigurationId in ('scid-90','scid-91','scid-92','scid-96','scid-2000','scid-2003','scid-2010','scid-2012','scid-2013','scid-2016','scid-6090','scid-6091','scid-6094') | summarize arg_max(Timestamp, IsCompliant, IsApplicable) by DeviceId, ConfigurationId | where IsApplicable == 1 | summarize CompliantDevices=countif(IsCompliant == 1), NonCompliantDevices=countif(IsCompliant == 0), TotalDevices=count() by ConfigurationId | extend ConfigurationName = case(ConfigurationId == 'scid-90', 'Email Scanning', ConfigurationId == 'scid-91', 'Behavior Monitoring', ConfigurationId == 'scid-92', 'Scan Downloads/Attachments', ConfigurationId == 'scid-96', 'Network Protection', ConfigurationId == 'scid-2000', 'Defender EDR Sensor', ConfigurationId == 'scid-2003', 'Tamper Protection', ConfigurationId == 'scid-2010', 'Defender Status', ConfigurationId == 'scid-2012', 'Real-time Protection', ConfigurationId == 'scid-2013', 'PUA Protection', ConfigurationId == 'scid-2016', 'Cloud-Delivered Protection', ConfigurationId == 'scid-6090', 'Real-time Protection (Linux/Mac)', ConfigurationId == 'scid-6091', 'PUA Protection (Linux/Mac)', ConfigurationId == 'scid-6094', 'Cloud-Delivered Protection (Linux/Mac)', 'Unknown'), ConfigurationCategory = 'SecurityFeature', ConfigurationSubcategory = case(ConfigurationId startswith 'scid-6', 'Linux/Mac', 'Windows')"
     },
     {
@@ -88,6 +98,21 @@
       "stream": "Custom-DefenderAVOutdated_CL",
       "dcr": "daily",
       "transform": "advancedHunting",
+      "expected_columns": [
+        "DeviceId",
+        "DeviceName",
+        "OSPlatform",
+        "AvMode",
+        "AvIsSignatureUpToDate",
+        "AvIsEngineUpToDate",
+        "AvIsPlatformUpToDate",
+        "AvSignatureVersion",
+        "AvEngineVersion",
+        "AvPlatformVersion",
+        "AvSignaturePublishTime",
+        "AvSignatureDataRefreshTime",
+        "SignatureAgeDays"
+      ],
       "query": "DeviceTvmInfoGathering | extend AvMode = case(tostring(AdditionalFields.AvMode) == '0', 'Active', tostring(AdditionalFields.AvMode) == '1', 'Passive', tostring(AdditionalFields.AvMode) == '2', 'Disabled', tostring(AdditionalFields.AvMode) == '5', 'PassiveAudit', tostring(AdditionalFields.AvMode) == '4', 'EDR Blocked', 'Unknown'), AvIsSignatureUpToDate = tostring(AdditionalFields.AvIsSignatureUptoDate), AvIsEngineUpToDate = tostring(AdditionalFields.AvIsEngineUptodate), AvIsPlatformUpToDate = tostring(AdditionalFields.AvIsPlatformUptodate), AvSignatureVersion = tostring(AdditionalFields.AvSignatureVersion), AvEngineVersion = tostring(AdditionalFields.AvEngineVersion), AvPlatformVersion = tostring(AdditionalFields.AvPlatformVersion), AvSignaturePublishTime = todatetime(AdditionalFields.AvSignaturePublishTime), AvSignatureDataRefreshTime = todatetime(AdditionalFields.AvSignatureDataRefreshTime) | where AvMode == 'Active' | where AvIsSignatureUpToDate =~ 'false' or AvIsEngineUpToDate =~ 'false' or AvIsPlatformUpToDate =~ 'false' | summarize arg_max(Timestamp, *) by DeviceId | extend SignatureAgeDays = datetime_diff('day', now(), AvSignaturePublishTime) | project DeviceName, OSPlatform, AvMode, AvIsSignatureUpToDate, AvIsEngineUpToDate, AvIsPlatformUpToDate, AvSignatureVersion, AvEngineVersion, AvPlatformVersion, AvSignaturePublishTime, AvSignatureDataRefreshTime, SignatureAgeDays, DeviceId"
     },
     {
@@ -97,6 +122,13 @@
       "stream": "Custom-DefenderAVDetections_CL",
       "dcr": "daily",
       "transform": "advancedHunting",
+      "expected_columns": [
+        "ThreatName",
+        "DetectionSource",
+        "DetectionCount",
+        "UniqueDevices",
+        "RemediatedCount"
+      ],
       "query": "DeviceEvents | where Timestamp > ago(1d) | where ActionType in ('AntivirusDetection', 'AntivirusEmergencyUpdate') | extend ThreatName = tostring(parse_json(AdditionalFields).ThreatName) | extend WasRemediated = tostring(parse_json(AdditionalFields).WasRemediated) | extend DetectionSource = tostring(parse_json(AdditionalFields).Source) | where ActionType == 'AntivirusDetection' | summarize DetectionCount=count(), UniqueDevices=dcount(DeviceId), RemediatedCount=countif(WasRemediated == 'true') by ThreatName, DetectionSource | project ThreatName, DetectionSource, DetectionCount, UniqueDevices, RemediatedCount"
     },
     {

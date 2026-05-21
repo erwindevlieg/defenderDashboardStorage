@@ -18,7 +18,7 @@ bin/
 obj/
 
 # IDE
-.vscode/
+
 .idea/
 *.swp
 *.swo

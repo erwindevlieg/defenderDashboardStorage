@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import aiohttp
 import pytest
 
-from polling.defender_client import DefenderClient, DEFENDER_SCOPE
+from polling.defender_client import DEFENDER_SCOPE, DefenderClient
 
 
 class TestDefenderClient:

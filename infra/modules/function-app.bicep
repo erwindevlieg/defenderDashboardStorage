@@ -125,6 +125,11 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'DCR_WEEKLY_SNAPSHOTS_ID', value: dcrWeeklySnapshotsImmutableId }
         { name: 'DCR_INTUNE_ID', value: dcrIntuneImmutableId }
         { name: 'APP_CONFIG_ENDPOINT', value: appConfigEndpoint }
+        { name: 'STATE_STORAGE_ACCOUNT', value: storageAccount.name }
+        { name: 'STATE_TABLE_NAME', value: 'FailedEndpoints' }
+        { name: 'INGESTION_STRICT_SCHEMA', value: 'false' }
+        { name: 'TOKEN_REFRESH_MARGIN_SECONDS', value: '300' }
+        { name: 'FAILED_ENDPOINT_TTL_HOURS', value: '24' }
         { name: 'FUNCTIONS_EXTENSION_VERSION', value: '~4' }
       ]
     }
@@ -141,6 +146,29 @@ resource storageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-
     principalId: reference(identityId, '2023-01-31').principalId
     principalType: 'ServicePrincipal'
   }
+}
+
+// Storage Table Data Contributor — UAMI persists failed-endpoint state across cold starts
+var storageTableDataContributorRoleId = '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+resource storageTableRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, identityId, storageTableDataContributorRoleId)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageTableDataContributorRoleId)
+    principalId: reference(identityId, '2023-01-31').principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Table service + failed-endpoint state table (Flex Consumption is stateless, so we persist)
+resource tableService 'Microsoft.Storage/storageAccounts/tableServices@2023-05-01' = {
+  parent: storageAccount
+  name: 'default'
+}
+
+resource failedEndpointsTable 'Microsoft.Storage/storageAccounts/tableServices/tables@2023-05-01' = {
+  parent: tableService
+  name: 'FailedEndpoints'
 }
 
 // ============================================================

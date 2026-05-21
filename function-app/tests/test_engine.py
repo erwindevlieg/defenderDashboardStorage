@@ -2,7 +2,6 @@
 
 from unittest.mock import patch
 
-
 from polling.engine import PollingEngine
 
 
