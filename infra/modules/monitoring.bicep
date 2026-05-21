@@ -33,7 +33,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 // ============================================================
-// Action Group — notificaties bij alerts
+// Action Group — alert notifications
 // ============================================================
 resource actionGroup 'Microsoft.Insights/actionGroups@2023-09-01-preview' = if (!empty(alertEmail)) {
   name: 'ag-defender-dashboard-${resourceToken}'
@@ -61,7 +61,7 @@ resource alertFunctionFailures 'Microsoft.Insights/scheduledQueryRules@2023-03-1
   tags: tags
   properties: {
     displayName: 'Defender Dashboard — Function Failures'
-    description: 'Meer dan 3 function failures in de afgelopen 30 minuten'
+    description: 'More than 3 function failures in the last 30 minutes.'
     severity: 2 // Warning
     enabled: true
     evaluationFrequency: 'PT15M'
@@ -95,8 +95,8 @@ resource alertMissingDailyData 'Microsoft.Insights/scheduledQueryRules@2023-03-1
   location: location
   tags: tags
   properties: {
-    displayName: 'Defender Dashboard — Ontbrekende dagelijkse data'
-    description: 'Geen Exposure Score data ingekomen in de afgelopen 26 uur'
+    displayName: 'Defender Dashboard — Missing daily data'
+    description: 'No Exposure Score data ingested in the last 26 hours.'
     severity: 2
     enabled: true
     evaluationFrequency: 'PT1H'
@@ -191,6 +191,166 @@ resource alertLongRunDuration 'Microsoft.Insights/scheduledQueryRules@2023-03-15
           timeAggregation: 'Count'
           operator: 'GreaterThan'
           threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: !empty(alertEmail) ? {
+      actionGroups: [ actionGroup.id ]
+    } : {}
+  }
+}
+
+// ============================================================
+// Alert: Endpoint poisoned (B3 signal)
+// ============================================================
+// Fires when PollingEngine logs ``defender.endpoint.poisoned`` for an
+// endpoint that exceeded MAX_POISON_ATTEMPTS. One occurrence is enough
+// because the endpoint has stopped being retried — manual triage required.
+resource alertEndpointPoisoned 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
+  name: 'alert-defender-endpoint-poisoned-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'Defender Dashboard — Endpoint poisoned'
+    description: 'An endpoint exceeded the poison threshold and is no longer being retried; manual investigation required.'
+    severity: 2 // Warning
+    enabled: true
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    scopes: [ appInsights.id ]
+    criteria: {
+      allOf: [
+        {
+          query: '''traces
+| where message has "defender.endpoint.poisoned"
+| summarize Count = count() by bin(timestamp, 15m)'''
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: !empty(alertEmail) ? {
+      actionGroups: [ actionGroup.id ]
+    } : {}
+  }
+}
+
+// ============================================================
+// Alert: App Configuration unreachable
+// ============================================================
+// If the endpoint catalogue cannot be loaded the polling run silently
+// becomes a no-op. Catch any exception originating from the App Config
+// client so we get told instead of seeing empty dashboards next morning.
+resource alertAppConfigUnreachable 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
+  name: 'alert-defender-appconfig-unreachable-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'Defender Dashboard — App Configuration unreachable'
+    description: 'Polling could not reach Azure App Configuration in the last 30 minutes; endpoint catalogue may be stale.'
+    severity: 1 // Error
+    enabled: true
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT30M'
+    scopes: [ appInsights.id ]
+    criteria: {
+      allOf: [
+        {
+          query: '''exceptions
+| where outerType has "AppConfiguration" or assembly has "appconfiguration"
+   or innermostMessage has "azconfig.io" or innermostMessage has ".azconfig."
+| summarize Count = count() by bin(timestamp, 15m)'''
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: !empty(alertEmail) ? {
+      actionGroups: [ actionGroup.id ]
+    } : {}
+  }
+}
+
+// ============================================================
+// Alert: Storage Table retries exhausted (A5 signal)
+// ============================================================
+// state_store._with_retry logs ``Table op X exhausted retries`` when the
+// retry budget is spent. Without this alert we silently drift back to the
+// in-memory fallback, losing failed-endpoint persistence across cold starts.
+resource alertStateTableExhausted 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
+  name: 'alert-defender-state-table-exhausted-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'Defender Dashboard — Storage Table retries exhausted'
+    description: 'Retry-state Table operations exceeded their retry budget; failed-endpoint persistence may be degraded.'
+    severity: 2 // Warning
+    enabled: true
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT30M'
+    scopes: [ appInsights.id ]
+    criteria: {
+      allOf: [
+        {
+          query: '''traces
+| where message has "exhausted retries"
+| summarize Count = count() by bin(timestamp, 15m)'''
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: !empty(alertEmail) ? {
+      actionGroups: [ actionGroup.id ]
+    } : {}
+  }
+}
+
+// ============================================================
+// Alert: DCR ingestion uploads failing
+// ============================================================
+// Catches the "Upload failed for stream X" log line emitted by
+// IngestionClient.upload when the Logs Ingestion API rejects a batch.
+resource alertIngestionFailures 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
+  name: 'alert-defender-ingestion-failures-${resourceToken}'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'Defender Dashboard — DCR ingestion failures'
+    description: 'More than 5 DCR upload failures in the last hour; data is not reaching Log Analytics.'
+    severity: 1 // Error
+    enabled: true
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    scopes: [ appInsights.id ]
+    criteria: {
+      allOf: [
+        {
+          query: '''traces
+| where message startswith "Upload failed for stream"
+| summarize Count = count() by bin(timestamp, 15m)'''
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 5
           failingPeriods: {
             numberOfEvaluationPeriods: 1
             minFailingPeriodsToAlert: 1

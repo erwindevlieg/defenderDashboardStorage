@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "8504839288842144627"
+      "templateHash": "12869429476169593363"
     }
   },
   "parameters": {
@@ -2685,7 +2685,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.43.8.12551",
-              "templateHash": "10858118698325931678"
+              "templateHash": "4365911775698348031"
             }
           },
           "parameters": {
@@ -2764,7 +2764,7 @@
               "tags": "[parameters('tags')]",
               "properties": {
                 "displayName": "Defender Dashboard — Function Failures",
-                "description": "Meer dan 3 function failures in de afgelopen 30 minuten",
+                "description": "More than 3 function failures in the last 30 minutes.",
                 "severity": 2,
                 "enabled": true,
                 "evaluationFrequency": "PT15M",
@@ -2800,8 +2800,8 @@
               "location": "[parameters('location')]",
               "tags": "[parameters('tags')]",
               "properties": {
-                "displayName": "Defender Dashboard — Ontbrekende dagelijkse data",
-                "description": "Geen Exposure Score data ingekomen in de afgelopen 26 uur",
+                "displayName": "Defender Dashboard — Missing daily data",
+                "description": "No Exposure Score data ingested in the last 26 hours.",
                 "severity": 2,
                 "enabled": true,
                 "evaluationFrequency": "PT1H",
@@ -2889,6 +2889,154 @@
                       "timeAggregation": "Count",
                       "operator": "GreaterThan",
                       "threshold": 0,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": "[if(not(empty(parameters('alertEmail'))), createObject('actionGroups', createArray(resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken'))))), createObject())]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "[format('alert-defender-endpoint-poisoned-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "Defender Dashboard — Endpoint poisoned",
+                "description": "An endpoint exceeded the poison threshold and is no longer being retried; manual investigation required.",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT15M",
+                "windowSize": "PT1H",
+                "scopes": [
+                  "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "traces\r\n| where message has \"defender.endpoint.poisoned\"\r\n| summarize Count = count() by bin(timestamp, 15m)",
+                      "timeAggregation": "Count",
+                      "operator": "GreaterThan",
+                      "threshold": 0,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": "[if(not(empty(parameters('alertEmail'))), createObject('actionGroups', createArray(resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken'))))), createObject())]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "[format('alert-defender-appconfig-unreachable-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "Defender Dashboard — App Configuration unreachable",
+                "description": "Polling could not reach Azure App Configuration in the last 30 minutes; endpoint catalogue may be stale.",
+                "severity": 1,
+                "enabled": true,
+                "evaluationFrequency": "PT15M",
+                "windowSize": "PT30M",
+                "scopes": [
+                  "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "exceptions\r\n| where outerType has \"AppConfiguration\" or assembly has \"appconfiguration\"\r\n   or innermostMessage has \"azconfig.io\" or innermostMessage has \".azconfig.\"\r\n| summarize Count = count() by bin(timestamp, 15m)",
+                      "timeAggregation": "Count",
+                      "operator": "GreaterThan",
+                      "threshold": 0,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": "[if(not(empty(parameters('alertEmail'))), createObject('actionGroups', createArray(resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken'))))), createObject())]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "[format('alert-defender-state-table-exhausted-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "Defender Dashboard — Storage Table retries exhausted",
+                "description": "Retry-state Table operations exceeded their retry budget; failed-endpoint persistence may be degraded.",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT15M",
+                "windowSize": "PT30M",
+                "scopes": [
+                  "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "traces\r\n| where message has \"exhausted retries\"\r\n| summarize Count = count() by bin(timestamp, 15m)",
+                      "timeAggregation": "Count",
+                      "operator": "GreaterThan",
+                      "threshold": 0,
+                      "failingPeriods": {
+                        "numberOfEvaluationPeriods": 1,
+                        "minFailingPeriodsToAlert": 1
+                      }
+                    }
+                  ]
+                },
+                "actions": "[if(not(empty(parameters('alertEmail'))), createObject('actionGroups', createArray(resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken'))))), createObject())]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', format('ag-defender-dashboard-{0}', parameters('resourceToken')))]",
+                "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/scheduledQueryRules",
+              "apiVersion": "2023-03-15-preview",
+              "name": "[format('alert-defender-ingestion-failures-{0}', parameters('resourceToken'))]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "displayName": "Defender Dashboard — DCR ingestion failures",
+                "description": "More than 5 DCR upload failures in the last hour; data is not reaching Log Analytics.",
+                "severity": 1,
+                "enabled": true,
+                "evaluationFrequency": "PT15M",
+                "windowSize": "PT1H",
+                "scopes": [
+                  "[resourceId('Microsoft.Insights/components', format('appi-defender-dashboard-{0}', parameters('resourceToken')))]"
+                ],
+                "criteria": {
+                  "allOf": [
+                    {
+                      "query": "traces\r\n| where message startswith \"Upload failed for stream\"\r\n| summarize Count = count() by bin(timestamp, 15m)",
+                      "timeAggregation": "Count",
+                      "operator": "GreaterThan",
+                      "threshold": 5,
                       "failingPeriods": {
                         "numberOfEvaluationPeriods": 1,
                         "minFailingPeriodsToAlert": 1
