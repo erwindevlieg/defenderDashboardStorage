@@ -23,7 +23,11 @@ resource appConfig 'Microsoft.AppConfiguration/configurationStores@2023-03-01' =
   tags: tags
   sku: { name: 'free' }
   properties: {
-    disableLocalAuth: true // Alleen Entra ID
+    // Local auth must remain enabled so the ARM `keyValues` child resources can
+    // seed endpoint definitions during deployment. Runtime access from the
+    // Function App is Entra-only via the App Configuration Data Reader role
+    // assignment below — the Function App never uses access keys.
+    disableLocalAuth: false
   }
 }
 
