@@ -29,8 +29,23 @@ from .state_store import FailedEndpointStore
 logger = logging.getLogger(__name__)
 
 DEFAULT_CONCURRENCY = 5
+DEFAULT_MAX_POISON_ATTEMPTS = 5
 
 REQUIRED_ENDPOINT_KEYS = ("url", "scope", "stream", "dcr")
+
+
+def _endpoint_identity(ep: dict) -> str:
+    """Stable identity for an endpoint across runs (used for attempt tracking)."""
+    return str(ep.get("key") or ep.get("stream") or ep.get("url") or "unknown")
+
+
+def _max_poison_attempts() -> int:
+    """Return the poison threshold (env ``MAX_POISON_ATTEMPTS``)."""
+    raw = os.environ.get("MAX_POISON_ATTEMPTS", str(DEFAULT_MAX_POISON_ATTEMPTS))
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return DEFAULT_MAX_POISON_ATTEMPTS
 
 
 def _validate_endpoint(config: dict, source: str) -> bool:
@@ -89,7 +104,8 @@ class PollingEngine:
         self._store = FailedEndpointStore(self._credential)
         self._appconfig: AzureAppConfigurationClient | None = None
         # In-memory fallback when Table Storage is not available.
-        self._memory_failed: dict[str, list[tuple[float, dict]]] = {
+        # Each entry: (queued_at, endpoint, attempt_count).
+        self._memory_failed: dict[str, list[tuple[float, dict, int]]] = {
             "daily": [],
             "weekly": [],
         }
@@ -151,14 +167,17 @@ class PollingEngine:
             )
         ]
 
-    def _load_failed(self, schedule: str) -> list[tuple[float, dict]]:
-        """Combine persisted + in-memory failed lists with TTL filter."""
+    def _load_failed(self, schedule: str) -> list[tuple[float, dict, int]]:
+        """Combine persisted + in-memory failed lists with TTL filter.
+
+        Each entry is ``(queued_at, endpoint, attempt_count)``.
+        """
         ttl = _ttl_seconds()
         persisted = self._store.load(schedule, ttl) if self._store.enabled else []
         now = time.time()
         memory = [
-            (ts, ep)
-            for ts, ep in self._memory_failed.get(schedule, [])
+            (ts, ep, attempts)
+            for ts, ep, attempts in self._memory_failed.get(schedule, [])
             if now - ts < ttl
         ]
         dropped = (
@@ -175,15 +194,40 @@ class PollingEngine:
             )
         return persisted + memory
 
-    def _save_failed(self, schedule: str, failed: list[dict]) -> None:
-        """Persist (or store in-memory) the new failed list for the next run."""
+    def _save_failed(self, schedule: str, failed: list[tuple[dict, int]]) -> None:
+        """Persist (or store in-memory) the new failed list for the next run.
+
+        ``failed`` items are ``(endpoint, attempt_count)`` tuples already
+        filtered of poisoned entries by the caller.
+        """
         now = time.time()
         if self._store.enabled:
             self._store.save(schedule, failed)
             # Keep in-memory empty to avoid duplicate retries.
             self._memory_failed[schedule] = []
         else:
-            self._memory_failed[schedule] = [(now, ep) for ep in failed]
+            self._memory_failed[schedule] = [
+                (now, ep, attempts) for ep, attempts in failed
+            ]
+
+    def _save_poisoned(self, schedule: str, endpoint: dict, attempt_count: int) -> None:
+        """Move an endpoint to the poison partition and emit an alertable log."""
+        key = _endpoint_identity(endpoint)
+        logger.warning(
+            "defender.endpoint.poisoned: %s exceeded %d attempts",
+            key,
+            attempt_count,
+            extra={
+                "custom_dimensions": {
+                    "schedule": schedule,
+                    "endpoint_key": key,
+                    "attempt_count": attempt_count,
+                    "event": "endpoint_poisoned",
+                }
+            },
+        )
+        if self._store.enabled:
+            self._store.save_poisoned(schedule, endpoint, attempt_count)
 
     async def _run_schedule(self, schedule: str) -> None:
         """Execute one polling run for a schedule (daily or weekly)."""
@@ -195,13 +239,17 @@ class PollingEngine:
         endpoints = self._load_endpoints(f"endpoints:{schedule}")
 
         retry_entries = self._load_failed(schedule)
+        # Map: endpoint identity → previous attempt count (carries across runs).
+        previous_attempts: dict[str, int] = {
+            _endpoint_identity(ep): attempts for _, ep, attempts in retry_entries
+        }
         if retry_entries:
             logger.info(
                 "Retrying %d previously failed %s endpoints",
                 len(retry_entries),
                 schedule,
             )
-            endpoints = [ep for _, ep in retry_entries] + endpoints
+            endpoints = [ep for _, ep, _ in retry_entries] + endpoints
 
         try:
             failed = await self._process_endpoints(
@@ -209,8 +257,19 @@ class PollingEngine:
             )
         finally:
             await self._aclose_clients()
+
+        # Split fresh-failures: poison vs retry.
+        poison_threshold = _max_poison_attempts()
+        retryable: list[tuple[dict, int]] = []
+        for ep in failed:
+            new_count = previous_attempts.get(_endpoint_identity(ep), 0) + 1
+            if new_count >= poison_threshold:
+                self._save_poisoned(schedule, ep, new_count)
+            else:
+                retryable.append((ep, new_count))
+
         # Write new failed-state ONLY after the run is fully complete.
-        self._save_failed(schedule, failed)
+        self._save_failed(schedule, retryable)
         logger.info(
             "%s polling run completed",
             schedule.capitalize(),

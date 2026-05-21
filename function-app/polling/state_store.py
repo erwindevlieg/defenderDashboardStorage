@@ -106,10 +106,14 @@ class FailedEndpointStore:
     """Persists failed endpoints in Azure Table Storage.
 
     Entity schema:
-      - PartitionKey: schedule ('daily' / 'weekly')
+      - PartitionKey: ``<schedule>`` for retry-eligible entries, or
+        ``poison-<schedule>`` for endpoints that have exceeded
+        ``MAX_POISON_ATTEMPTS``.
       - RowKey: unique id (uuid4)
       - Timestamp: set by SDK
-      - QueuedAt: epoch seconds the endpoint failed (float)
+      - QueuedAt: epoch seconds the endpoint last failed (float)
+      - AttemptCount: number of consecutive failed attempts (int, default 0
+        for legacy rows written before B3)
       - Endpoint: JSON-serialized endpoint config (string)
     """
 
@@ -137,16 +141,21 @@ class FailedEndpointStore:
         """Return whether persistence is active (Table client built successfully)."""
         return self._client is not None
 
-    def load(self, schedule: str, ttl_seconds: int) -> list[tuple[float, dict]]:
+    @staticmethod
+    def _poison_partition(schedule: str) -> str:
+        return f"poison-{schedule}"
+
+    def load(self, schedule: str, ttl_seconds: int) -> list[tuple[float, dict, int]]:
         """Load all non-expired failed entries for a schedule.
 
-        Expired entries are deleted in-line. On error: log and return [].
+        Each tuple is ``(queued_at, endpoint, attempt_count)``. Expired
+        entries are deleted in-line. On error: log and return [].
         """
         if not self._client:
             return []
 
         now = time.time()
-        result: list[tuple[float, dict]] = []
+        result: list[tuple[float, dict, int]] = []
 
         def _query() -> Any:
             return list(
@@ -164,6 +173,7 @@ class FailedEndpointStore:
             try:
                 queued_at = float(entity.get("QueuedAt", 0.0))
                 endpoint = json.loads(entity.get("Endpoint", "{}"))
+                attempt_count = int(entity.get("AttemptCount", 0) or 0)
             except (TypeError, ValueError, json.JSONDecodeError):
                 logger.warning("Skipping invalid failed-entry %s", entity.get("RowKey"))
                 self._safe_delete(schedule, entity.get("RowKey", ""))
@@ -173,7 +183,7 @@ class FailedEndpointStore:
                 self._safe_delete(schedule, entity.get("RowKey", ""))
                 continue
 
-            result.append((queued_at, endpoint))
+            result.append((queued_at, endpoint, attempt_count))
 
         return result
 
@@ -197,17 +207,31 @@ class FailedEndpointStore:
         for entity in entities:
             self._safe_delete(schedule, entity.get("RowKey", ""))
 
-    def save(self, schedule: str, failed: list[dict]) -> None:
-        """Write the current failed-set (overwrites the previous one)."""
+    def save(
+        self,
+        schedule: str,
+        failed: list[dict] | list[tuple[dict, int]],
+    ) -> None:
+        """Write the current failed-set (overwrites the previous one).
+
+        Accepts either a plain list of endpoint dicts (legacy callers,
+        attempt count defaults to 1) or a list of ``(endpoint, attempt_count)``
+        tuples.
+        """
         if not self._client:
             return
         self.clear(schedule)
         now = time.time()
-        for ep in failed:
+        for entry in failed:
+            if isinstance(entry, tuple):
+                ep, attempt_count = entry
+            else:
+                ep, attempt_count = entry, 1
             entity = {
                 "PartitionKey": schedule,
                 "RowKey": uuid.uuid4().hex,
                 "QueuedAt": now,
+                "AttemptCount": int(attempt_count),
                 "Endpoint": json.dumps(ep, default=str),
             }
 
@@ -215,6 +239,28 @@ class FailedEndpointStore:
                 return self._client.create_entity(e)  # type: ignore[attr-defined]
 
             _with_retry("create_entity", _create)
+
+    def save_poisoned(self, schedule: str, endpoint: dict, attempt_count: int) -> None:
+        """Persist an endpoint that has exceeded the poison threshold.
+
+        Written to a dedicated ``poison-<schedule>`` partition so the retry
+        loop never picks it up again. Operators triage via Storage Explorer
+        / KQL alert (see B4).
+        """
+        if not self._client:
+            return
+        entity = {
+            "PartitionKey": self._poison_partition(schedule),
+            "RowKey": uuid.uuid4().hex,
+            "QueuedAt": time.time(),
+            "AttemptCount": int(attempt_count),
+            "Endpoint": json.dumps(endpoint, default=str),
+        }
+
+        def _create() -> Any:
+            return self._client.create_entity(entity)  # type: ignore[attr-defined]
+
+        _with_retry("create_poisoned", _create)
 
     def _safe_delete(self, partition_key: str, row_key: str) -> None:
         if not self._client or not row_key:

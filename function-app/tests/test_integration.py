@@ -204,7 +204,9 @@ class TestIntegration:
         await engine.run_daily()
 
         assert len(captured["failed"]) == 1
-        assert captured["failed"][0]["key"] == "bad"
+        ep, attempts = captured["failed"][0]
+        assert ep["key"] == "bad"
+        assert attempts == 1
 
     @pytest.mark.asyncio
     async def test_pagination_failure_persists_resume_checkpoint(
@@ -245,8 +247,10 @@ class TestIntegration:
         assert engine._ingestion.upload.await_count == 2
         # Endpoint is queued for retry with the resume checkpoint set.
         assert len(captured["failed"]) == 1
-        assert captured["failed"][0]["key"] == "paged"
-        assert captured["failed"][0]["resume_next_link"] == "next-3"
+        ep, attempts = captured["failed"][0]
+        assert ep["key"] == "paged"
+        assert ep["resume_next_link"] == "next-3"
+        assert attempts == 1
 
     @pytest.mark.asyncio
     async def test_resume_uses_stored_next_link(self, mock_credential, monkeypatch):
@@ -287,3 +291,43 @@ class TestIntegration:
         # Successful drain → endpoint is not in the failed list, checkpoint cleared.
         assert captured.get("failed", []) == []
         assert "resume_next_link" not in endpoints[0]
+
+    @pytest.mark.asyncio
+    async def test_endpoint_poisons_after_threshold(self, mock_credential, monkeypatch):
+        """After ``MAX_POISON_ATTEMPTS`` failures the endpoint is poisoned."""
+        monkeypatch.setenv("MAX_POISON_ATTEMPTS", "3")
+        engine = _build_engine(mock_credential)
+        monkeypatch.setenv("DCR_DAILY_SCORES_ID", "dcr-test")
+
+        bad_ep = {
+            "key": "broken",
+            "url": "https://graph.microsoft.com/v1.0/x",
+            "scope": "https://graph.microsoft.com/.default",
+            "stream": "Custom-Broken_CL",
+            "dcr": "daily",
+            "transform": "graphList",
+        }
+        engine._load_endpoints = MagicMock(return_value=[])
+        # Simulate this endpoint has already failed twice on previous runs.
+        engine._load_failed = MagicMock(return_value=[(0.0, bad_ep, 2)])
+
+        captured: dict[str, list] = {"failed": [], "poison": []}
+        engine._save_failed = lambda schedule, failed: captured.update(failed=failed)
+        engine._save_poisoned = lambda schedule, ep, attempts: captured[
+            "poison"
+        ].append((ep, attempts))
+
+        async def iter_pages_side_effect(url, start_next_link=None):
+            raise PaginationError(url, url)
+            yield  # pragma: no cover  # make this an async generator
+
+        engine._graph.iter_pages = iter_pages_side_effect
+
+        await engine.run_daily()
+
+        # Third failure → poisoned, not requeued.
+        assert captured["failed"] == []
+        assert len(captured["poison"]) == 1
+        ep, attempts = captured["poison"][0]
+        assert ep["key"] == "broken"
+        assert attempts == 3
