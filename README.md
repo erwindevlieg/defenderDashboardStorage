@@ -28,11 +28,18 @@ Create a resource group (e.g. `rg-defender-dashboard`), click the button, and fi
 | --- | --- | --- |
 | `resourceToken` | Short unique token for resource names, e.g. `prod01` (3–10 chars) | ✅ |
 | `repoUrl` | Your fork URL — Python code is auto-deployed when set | |
-| `scriptRunnerIdentityId` | Resource ID of a UAMI with `AppRoleAssignment.ReadWrite.All` — auto-assigns API permissions when set | |
+| `scriptRunnerIdentityId` | Resource ID of a UAMI with `AppRoleAssignment.ReadWrite.All` — auto-assigns the Defender + Graph app roles when set, leave empty to assign them yourself afterwards | |
 
-### 2. Assign API permissions
+The deployment **always** creates a User-Assigned Managed Identity for the Function App and binds it to Log Analytics (`Monitoring Metrics Publisher` on the DCR), App Configuration (`App Configuration Data Reader`) and Storage (`Storage Table Data Contributor`). You do not need to create that identity or assign those Azure roles yourself.
 
-If you did **not** provide `scriptRunnerIdentityId`, you have to grant Defender + Graph app roles to the Managed Identity manually. See **[Wiki → Bootstrap](https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Bootstrap)** for the PowerShell snippet and full permission list.
+### 2. Grant Defender + Graph app roles
+
+The dashboard's Managed Identity also needs **app-role grants** on Microsoft Graph and the Defender XDR / WindowsDefenderATP service principals (e.g. `SecurityRecommendation.Read.All`, `Machine.Read.All`, `DeviceManagementManagedDevices.Read.All`). These cannot be assigned through the normal Azure RBAC plane — they require a Graph API call with `AppRoleAssignment.ReadWrite.All`. Pick one of two paths:
+
+- **Automatic** — provide `scriptRunnerIdentityId` (Resource ID of an existing UAMI that already holds `AppRoleAssignment.ReadWrite.All` on Microsoft Graph). The deployment then runs a `deploymentScript` that grants every required app role to the dashboard MI. After the deploy finishes, you are done.
+- **Manual** — leave `scriptRunnerIdentityId` empty. The deploy still succeeds, but the function will get `Forbidden` from the Defender/Graph APIs until you run [`infra/scripts/assign-app-roles.ps1`](infra/scripts/assign-app-roles.ps1) once as a Global Administrator (or Privileged Role Administrator). See **[Wiki → Bootstrap](https://github.com/erwindevlieg/defenderDashboardStorage/wiki/Bootstrap)** for the snippet and full permission list.
+
+> Tip: in enterprise environments it is usually worth creating a one-off "ddash-bootstrap" UAMI with `AppRoleAssignment.ReadWrite.All` and reusing its Resource ID for every future deploy.
 
 ### 3. Verify
 
