@@ -32,6 +32,8 @@ Create a resource group (e.g. `rg-defender-dashboard`), click the button, and fi
 
 The deployment **always** creates a User-Assigned Managed Identity for the Function App and binds it to Log Analytics (`Monitoring Metrics Publisher` on the DCR), App Configuration (`App Configuration Data Reader`) and Storage (`Storage Table Data Contributor`). You do not need to create that identity or assign those Azure roles yourself.
 
+If a rollout fails, **do not immediately delete all resources**. First fix the reported cause (most often missing Graph app-role privileges for `scriptRunnerIdentityId`) and re-run the same deployment. Only remove resources when you explicitly want a clean environment and accept that previously created state will be lost.
+
 ### 2. Grant Defender + Graph app roles
 
 The dashboard's Managed Identity also needs **app-role grants** on Microsoft Graph and the Defender XDR / WindowsDefenderATP service principals (e.g. `SecurityRecommendation.Read.All`, `Machine.Read.All`, `DeviceManagementManagedDevices.Read.All`). These cannot be assigned through the normal Azure RBAC plane — they require a Graph API call with `AppRoleAssignment.ReadWrite.All`. Pick one of two paths:
